@@ -1,0 +1,8 @@
+{
+  "name": "Intelligent Transit Management & Real-Time Crowd Detection System",
+  "description": "Frontend prototype for an intelligent public transportation crowd monitoring, forecasting, alerting, and bus deployment recommendation platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
