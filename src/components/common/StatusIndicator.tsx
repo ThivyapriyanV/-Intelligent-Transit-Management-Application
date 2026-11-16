@@ -16,16 +16,23 @@ import {
   RecommendationStatus,
 } from '../../types/transit';
 
+/**
+ * Crowd density color mapping:
+ * - LOW: Green (#22C55E)
+ * - MODERATE: Yellow (#EAB308)
+ * - HIGH: Orange (#F97316)
+ * - CRITICAL: Crimson Red (#E11D48)
+ */
 export function getDensityColorHex(level: CrowdDensityLevel): string {
   switch (level) {
     case 'LOW':
-      return '#10B981';
+      return '#22C55E';
     case 'MODERATE':
-      return '#3B82F6';
+      return '#EAB308';
     case 'HIGH':
-      return '#F59E0B';
+      return '#F97316';
     case 'CRITICAL':
-      return '#EF4444';
+      return '#E11D48';
   }
 }
 
@@ -36,26 +43,26 @@ export const DensityTag: React.FC<{ level: CrowdDensityLevel }> = ({ level }) =>
   > = {
     LOW: {
       label: 'Low',
-      textClass: 'text-emerald-400',
-      borderClass: 'border-emerald-500/30 bg-emerald-500/10',
+      textClass: 'text-[#4ADE80]',
+      borderClass: 'border-[#22C55E]/30 bg-[#22C55E]/10',
       icon: <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />,
     },
     MODERATE: {
       label: 'Moderate',
-      textClass: 'text-blue-400',
-      borderClass: 'border-blue-500/30 bg-blue-500/10',
+      textClass: 'text-[#FACC15]',
+      borderClass: 'border-[#EAB308]/30 bg-[#EAB308]/10',
       icon: <Info className="w-3.5 h-3.5 shrink-0" />,
     },
     HIGH: {
       label: 'High',
-      textClass: 'text-amber-400',
-      borderClass: 'border-amber-500/30 bg-amber-500/10',
+      textClass: 'text-[#FB923C]',
+      borderClass: 'border-[#F97316]/35 bg-[#F97316]/12',
       icon: <AlertTriangle className="w-3.5 h-3.5 shrink-0" />,
     },
     CRITICAL: {
       label: 'Critical',
-      textClass: 'text-red-400',
-      borderClass: 'border-red-500/30 bg-red-500/10',
+      textClass: 'text-[#FB7185]',
+      borderClass: 'border-[#B51232]/60 bg-[#B51232]/20',
       icon: <AlertOctagon className="w-3.5 h-3.5 shrink-0" />,
     },
   };
@@ -75,17 +82,17 @@ export const SeverityTag: React.FC<{ severity: AlertSeverity }> = ({ severity })
   const styles: Record<AlertSeverity, { label: string; cls: string; icon: React.ReactNode }> = {
     INFO: {
       label: 'Info',
-      cls: 'text-blue-400 border-blue-500/30 bg-blue-500/10',
+      cls: 'text-[#FACC15] border-[#EAB308]/30 bg-[#EAB308]/10',
       icon: <Info className="w-3.5 h-3.5 shrink-0" />,
     },
     WARNING: {
       label: 'Warning',
-      cls: 'text-amber-400 border-amber-500/30 bg-amber-500/10',
+      cls: 'text-[#FB923C] border-[#F97316]/35 bg-[#F97316]/12',
       icon: <AlertTriangle className="w-3.5 h-3.5 shrink-0" />,
     },
     CRITICAL: {
       label: 'Critical',
-      cls: 'text-red-400 border-red-500/30 bg-red-500/10',
+      cls: 'text-[#FB7185] border-[#B51232]/60 bg-[#B51232]/20',
       icon: <AlertOctagon className="w-3.5 h-3.5 shrink-0" />,
     },
   };
@@ -102,9 +109,9 @@ export const SeverityTag: React.FC<{ severity: AlertSeverity }> = ({ severity })
 
 export const AlertStatusText: React.FC<{ status: AlertStatus }> = ({ status }) => {
   const map: Record<AlertStatus, { label: string; cls: string }> = {
-    ACTIVE: { label: 'Active', cls: 'text-red-400' },
-    ACKNOWLEDGED: { label: 'Acknowledged', cls: 'text-amber-400' },
-    RESOLVED: { label: 'Resolved', cls: 'text-emerald-400' },
+    ACTIVE: { label: 'Active', cls: 'text-[#FB7185]' },
+    ACKNOWLEDGED: { label: 'Acknowledged', cls: 'text-[#FB923C]' },
+    RESOLVED: { label: 'Resolved', cls: 'text-[#4ADE80]' },
   };
   const item = map[status];
   return <span className={`text-xs font-medium whitespace-nowrap ${item.cls}`}>{item.label}</span>;
@@ -113,14 +120,14 @@ export const AlertStatusText: React.FC<{ status: AlertStatus }> = ({ status }) =
 export const CameraStatusTag: React.FC<{ status: CameraStatus }> = ({ status }) => {
   if (status === 'ONLINE') {
     return (
-      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-400 whitespace-nowrap shrink-0">
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-[#4ADE80] whitespace-nowrap shrink-0">
         <Wifi className="w-3.5 h-3.5" />
         <span>Online</span>
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 text-xs font-medium text-red-400 whitespace-nowrap shrink-0">
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-[#FB7185] whitespace-nowrap shrink-0">
       <WifiOff className="w-3.5 h-3.5" />
       <span>Offline</span>
     </span>
@@ -129,10 +136,10 @@ export const CameraStatusTag: React.FC<{ status: CameraStatus }> = ({ status }) 
 
 export const PriorityTag: React.FC<{ priority: RecommendationPriority }> = ({ priority }) => {
   const styles: Record<RecommendationPriority, string> = {
-    URGENT: 'text-red-400 border-red-500/30 bg-red-500/10',
-    HIGH: 'text-amber-400 border-amber-500/30 bg-amber-500/10',
-    MEDIUM: 'text-blue-400 border-blue-500/30 bg-blue-500/10',
-    LOW: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10',
+    URGENT: 'text-[#FB7185] border-[#B51232]/60 bg-[#B51232]/20',
+    HIGH: 'text-[#FB923C] border-[#F97316]/35 bg-[#F97316]/12',
+    MEDIUM: 'text-[#FACC15] border-[#EAB308]/30 bg-[#EAB308]/10',
+    LOW: 'text-[#4ADE80] border-[#22C55E]/30 bg-[#22C55E]/10',
   };
   return (
     <span
@@ -147,9 +154,9 @@ export const RecommendationStatusText: React.FC<{ status: RecommendationStatus }
   status,
 }) => {
   const map: Record<RecommendationStatus, { label: string; cls: string }> = {
-    PENDING: { label: 'Pending Review', cls: 'text-slate-300' },
-    REVIEWED: { label: 'Reviewed', cls: 'text-blue-400' },
-    ASSIGNED: { label: 'Assigned (Simulated)', cls: 'text-emerald-400' },
+    PENDING: { label: 'Pending Review', cls: 'text-[#AAA3AD]' },
+    REVIEWED: { label: 'Reviewed', cls: 'text-[#FACC15]' },
+    ASSIGNED: { label: 'Assigned (Simulated)', cls: 'text-[#4ADE80]' },
   };
   const item = map[status];
   return <span className={`text-xs font-medium whitespace-nowrap ${item.cls}`}>{item.label}</span>;

@@ -38,7 +38,7 @@ const TransitWorkspace: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-[#0B1120] text-slate-100">
+    <div className="min-h-screen flex bg-[#100E12] text-[#F4F1F3]">
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
@@ -46,7 +46,7 @@ const TransitWorkspace: React.FC = () => {
         onCloseMobile={() => setMobileMenuOpen(false)}
       />
 
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex-1 min-w-0 flex flex-col bg-[#151217]">
         <TopHeader onOpenMobileMenu={() => setMobileMenuOpen(true)} />
         <main className="flex-1 p-4 sm:p-6 max-w-[1600px] w-full mx-auto">
           {renderPage()}

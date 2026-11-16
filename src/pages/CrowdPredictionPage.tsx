@@ -4,6 +4,7 @@ import {
   Area,
   CartesianGrid,
   ComposedChart,
+  Legend,
   Line,
   ResponsiveContainer,
   Tooltip,
@@ -18,7 +19,6 @@ export const CrowdPredictionPage: React.FC = () => {
   const { forecasts, selectedStationFilter } = useTransit();
   const [focusedStationId, setFocusedStationId] = useState<StationId>('guindy');
 
-  // If header station filter is set to a specific station, align with it automatically
   const effectiveStationId: StationId =
     selectedStationFilter !== 'all' ? selectedStationFilter : focusedStationId;
 
@@ -32,18 +32,18 @@ export const CrowdPredictionPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Simulated Estimate Disclaimer + Station Selector */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
-        <div className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-xs text-blue-200 max-w-2xl">
-          <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[#343039]">
+        <div className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-lg bg-[#201C22] border border-[#B51232]/40 text-xs text-[#AAA3AD] max-w-2xl">
+          <Info className="w-4 h-4 text-[#D01940] shrink-0 mt-0.5" />
           <span>
-            <strong>Simulated Forecast Notice:</strong> Values below are simulated estimates
-            computed via Holt&apos;s double exponential smoothing (α={activeForecast.alphaLevel}, β=
-            {activeForecast.betaTrend}) over simulated historical intervals—not live machine
-            learning model output.
+            <strong className="text-[#F4F1F3]">Simulated Forecast Notice:</strong> Values below are
+            simulated estimates computed via Holt&apos;s double exponential smoothing (α=
+            {activeForecast.alphaLevel}, β={activeForecast.betaTrend}) over simulated historical
+            intervals—not live machine learning model output.
           </span>
         </div>
 
-        <div className="inline-flex items-center p-1 rounded-lg bg-[#111827] border border-slate-800 shrink-0 self-start">
+        <div className="inline-flex items-center p-1 rounded-lg bg-[#201C22] border border-[#343039] shrink-0 self-start">
           {forecasts.map((f) => (
             <button
               key={f.stationId}
@@ -51,8 +51,8 @@ export const CrowdPredictionPage: React.FC = () => {
               onClick={() => setFocusedStationId(f.stationId)}
               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
                 effectiveStationId === f.stationId
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-400 hover:text-slate-100'
+                  ? 'bg-[#B51232] text-[#F4F1F3]'
+                  : 'text-[#AAA3AD] hover:text-[#F4F1F3]'
               }`}
             >
               {f.stationName}
@@ -61,48 +61,48 @@ export const CrowdPredictionPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Forecast Summary Strip: Current + 15m / 30m / 60m + Peak & Confidence */}
+      {/* Forecast Summary Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="rounded-xl bg-[#111827] border border-slate-800/90 p-4">
-          <div className="text-xs text-slate-400">Current Passenger Count</div>
-          <div className="text-2xl font-semibold text-slate-100 font-mono tabular-nums mt-1">
+        <div className="rounded-xl bg-[#201C22] border border-[#343039] p-4">
+          <div className="text-xs text-[#AAA3AD]">Current Passenger Count</div>
+          <div className="text-2xl font-semibold text-[#F4F1F3] font-display tabular-nums mt-1">
             {activeForecast.currentPassengers}
           </div>
-          <div className="text-xs text-slate-400 mt-1">{activeForecast.stationName}</div>
+          <div className="text-xs text-[#77717B] mt-1">{activeForecast.stationName}</div>
         </div>
 
         {[h15, h30, h60].map((h) => (
           <div
             key={h.minutes}
-            className="rounded-xl bg-[#111827] border border-slate-800/90 p-4 flex flex-col justify-between"
+            className="rounded-xl bg-[#201C22] border border-[#343039] p-4 flex flex-col justify-between"
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-slate-400">Predicted (+{h.minutes} min)</span>
+              <span className="text-xs text-[#AAA3AD]">Predicted (+{h.minutes} min)</span>
               <DensityTag level={h.densityLevel} />
             </div>
             <div className="mt-2 flex items-baseline justify-between gap-2">
-              <span className="text-2xl font-semibold text-slate-100 font-mono tabular-nums">
+              <span className="text-2xl font-semibold text-[#F4F1F3] font-display tabular-nums">
                 {h.predictedPassengers}
               </span>
-              <span className="text-xs font-mono tabular-nums text-slate-300">
+              <span className="text-xs font-mono tabular-nums text-[#AAA3AD]">
                 {h.occupancyPercentage}% load
               </span>
             </div>
-            <div className="text-[11px] text-slate-400 font-mono tabular-nums mt-1">
+            <div className="text-[11px] text-[#77717B] font-mono tabular-nums mt-1">
               Confidence: {h.confidencePercentage}%
             </div>
           </div>
         ))}
 
-        <div className="rounded-xl bg-[#111827] border border-slate-800/90 p-4 flex flex-col justify-between">
+        <div className="rounded-xl bg-[#201C22] border border-[#B51232]/50 crimson-glow-sm p-4 flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs text-slate-400">Expected Peak Window</span>
-            <TrendingUp className="w-4 h-4 text-amber-400" />
+            <span className="text-xs text-[#AAA3AD]">Expected Peak Window</span>
+            <TrendingUp className="w-4 h-4 text-[#D01940]" />
           </div>
-          <div className="text-xl font-semibold text-slate-100 font-mono tabular-nums mt-1">
+          <div className="text-xl font-semibold text-[#F4F1F3] font-display tabular-nums mt-1">
             {activeForecast.expectedPeakTime}
           </div>
-          <div className="text-xs text-slate-400 font-mono tabular-nums mt-1">
+          <div className="text-xs text-[#AAA3AD] font-mono tabular-nums mt-1">
             Est. {activeForecast.expectedPeakPassengers} pax · {activeForecast.overallConfidence}%
             conf.
           </div>
@@ -110,18 +110,18 @@ export const CrowdPredictionPage: React.FC = () => {
       </div>
 
       {/* Forecast Trend Chart */}
-      <section className="rounded-xl bg-[#111827] border border-slate-800/90 p-5">
+      <section className="rounded-xl bg-[#201C22] border border-[#343039] p-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
-            <h2 className="text-sm font-semibold text-slate-100">
+            <h2 className="text-sm font-medium text-[#F4F1F3] font-display">
               {activeForecast.stationName} — Passenger Flow Forecast Trajectory
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-[#AAA3AD]">
               Recent simulated observations paired with +15m, +30m, +45m, and +60m double
               exponential smoothing estimates
             </p>
           </div>
-          <div className="text-xs font-mono text-slate-400">
+          <div className="text-xs font-mono text-[#FB7185]">
             Model Confidence: {activeForecast.overallConfidence}%
           </div>
         </div>
@@ -132,25 +132,30 @@ export const CrowdPredictionPage: React.FC = () => {
               data={activeForecast.series}
               margin={{ top: 10, right: 16, left: 0, bottom: 0 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
-              <XAxis dataKey="timeLabel" stroke="#94A3B8" tick={{ fontSize: 11 }} />
-              <YAxis stroke="#64748B" tick={{ fontSize: 11 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#343039" vertical={false} />
+              <XAxis
+                dataKey="timeLabel"
+                stroke="#77717B"
+                tick={{ fontSize: 11, fill: '#AAA3AD' }}
+              />
+              <YAxis stroke="#77717B" tick={{ fontSize: 11, fill: '#AAA3AD' }} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#0F172A',
-                  borderColor: '#334155',
+                  backgroundColor: '#262128',
+                  borderColor: '#343039',
                   borderRadius: '8px',
                   fontSize: '12px',
-                  color: '#F1F5F9',
+                  color: '#F4F1F3',
                 }}
               />
+              <Legend wrapperStyle={{ fontSize: '11px', color: '#AAA3AD' }} />
               <Area
                 type="monotone"
                 dataKey="upperBound"
                 name="Upper Estimate Band"
                 stroke="none"
-                fill="#3B82F6"
-                fillOpacity={0.14}
+                fill="#B51232"
+                fillOpacity={0.16}
                 isAnimationActive={false}
               />
               <Area
@@ -158,17 +163,17 @@ export const CrowdPredictionPage: React.FC = () => {
                 dataKey="lowerBound"
                 name="Lower Estimate Band"
                 stroke="none"
-                fill="#0B1120"
-                fillOpacity={0.85}
+                fill="#201C22"
+                fillOpacity={0.9}
                 isAnimationActive={false}
               />
               <Line
                 type="monotone"
                 dataKey="actualPassengers"
                 name="Observed (Simulated)"
-                stroke="#10B981"
+                stroke="#AAA3AD"
                 strokeWidth={2.5}
-                dot={{ r: 3.5, fill: '#10B981' }}
+                dot={{ r: 3.5, fill: '#F4F1F3' }}
                 connectNulls={false}
                 isAnimationActive={false}
               />
@@ -176,10 +181,10 @@ export const CrowdPredictionPage: React.FC = () => {
                 type="monotone"
                 dataKey="predictedPassengers"
                 name="Forecast Estimate"
-                stroke="#3B82F6"
+                stroke="#D01940"
                 strokeWidth={2.5}
                 strokeDasharray="5 4"
-                dot={{ r: 3.5, fill: '#3B82F6' }}
+                dot={{ r: 3.5, fill: '#D01940' }}
                 isAnimationActive={false}
               />
             </ComposedChart>
@@ -188,16 +193,16 @@ export const CrowdPredictionPage: React.FC = () => {
       </section>
 
       {/* Network Forecast Summary Table */}
-      <section className="rounded-xl bg-[#111827] border border-slate-800/90 overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-800">
-          <h2 className="text-sm font-semibold text-slate-100">
+      <section className="rounded-xl bg-[#201C22] border border-[#343039] overflow-hidden">
+        <div className="px-5 py-4 border-b border-[#343039]">
+          <h2 className="text-sm font-medium text-[#F4F1F3] font-display">
             All-Station 60-Minute Forecast Comparison (Simulated Estimates)
           </h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-800 text-xs font-medium text-slate-400 bg-[#0F172A]">
+              <tr className="border-b border-[#343039] text-xs font-medium text-[#AAA3AD] bg-[#262128]">
                 <th className="py-3 px-4">Station</th>
                 <th className="py-3 px-4 text-right">Current</th>
                 <th className="py-3 px-4 text-right">+15 min</th>
@@ -208,33 +213,33 @@ export const CrowdPredictionPage: React.FC = () => {
                 <th className="py-3 px-4 text-right">Confidence</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/70 text-sm">
+            <tbody className="divide-y divide-[#343039] text-sm">
               {forecasts.map((f) => {
                 const f15 = f.horizons[0];
                 const f30 = f.horizons[1];
                 const f60 = f.horizons[2];
                 return (
-                  <tr key={f.stationId} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="py-3 px-4 font-medium text-slate-100">{f.stationName}</td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-200">
+                  <tr key={f.stationId} className="hover:bg-[#B51232]/10 transition-colors">
+                    <td className="py-3 px-4 font-medium text-[#F4F1F3]">{f.stationName}</td>
+                    <td className="py-3 px-4 text-right font-mono tabular-nums text-[#AAA3AD]">
                       {f.currentPassengers}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-200">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums text-[#AAA3AD]">
                       {f15.predictedPassengers}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-100 font-semibold">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums text-[#F4F1F3] font-semibold">
                       {f30.predictedPassengers}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-200">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums text-[#AAA3AD]">
                       {f60.predictedPassengers}
                     </td>
                     <td className="py-3 px-4">
                       <DensityTag level={f30.densityLevel} />
                     </td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-300">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums text-[#AAA3AD]">
                       {f.expectedPeakTime}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums text-blue-400">
+                    <td className="py-3 px-4 text-right font-mono tabular-nums text-[#FB7185]">
                       {f.overallConfidence}%
                     </td>
                   </tr>

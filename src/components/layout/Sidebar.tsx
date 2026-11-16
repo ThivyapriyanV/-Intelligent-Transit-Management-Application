@@ -72,7 +72,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <>
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs lg:hidden"
+          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-xs lg:hidden"
           onClick={onCloseMobile}
           aria-hidden="true"
         />
@@ -80,23 +80,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <aside
         aria-label="Primary Navigation"
-        className={`no-print fixed lg:sticky top-0 left-0 z-50 h-screen flex flex-col bg-[#0F172A] border-r border-slate-800/80 transition-all duration-200 shrink-0 ${
+        className={`no-print fixed lg:sticky top-0 left-0 z-50 h-screen flex flex-col bg-[#121014] border-r border-[#343039] transition-all duration-200 shrink-0 ${
           collapsed ? 'w-[72px]' : 'w-[260px]'
         } ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         {/* Brand Header */}
-        <div className="h-16 px-4 flex items-center justify-between border-b border-slate-800/80 shrink-0">
+        <div className="h-16 px-4 flex items-center justify-between border-b border-[#343039] shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center shrink-0 text-blue-400">
-              <Radar className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-lg bg-[#B51232]/20 border border-[#B51232]/50 crimson-glow-sm flex items-center justify-center shrink-0 text-[#F4F1F3]">
+              <Radar className="w-4 h-4 text-[#D01940]" />
             </div>
             {!collapsed && (
               <div className="min-w-0">
-                <div className="text-sm font-semibold text-slate-100 leading-tight truncate font-display">
+                <div className="text-sm font-semibold text-[#F4F1F3] leading-tight truncate font-display">
                   Transit Command
                 </div>
-                <div className="text-[11px] text-slate-400 truncate">
-                  Crowd Detection Prototype
+                <div className="text-[11px] text-[#77717B] truncate">
+                  Crowd Detection System
                 </div>
               </div>
             )}
@@ -106,7 +106,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             type="button"
             onClick={onCloseMobile}
             aria-label="Close navigation menu"
-            className="lg:hidden p-1.5 rounded-md text-slate-400 hover:text-slate-100 hover:bg-slate-800"
+            className="lg:hidden p-1.5 rounded-md text-[#AAA3AD] hover:text-[#F4F1F3] hover:bg-[#262128]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -116,7 +116,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={onToggleCollapse}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="hidden lg:inline-flex items-center justify-center w-7 h-7 rounded-md text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors shrink-0"
+            className="hidden lg:inline-flex items-center justify-center w-7 h-7 rounded-md text-[#AAA3AD] hover:text-[#F4F1F3] hover:bg-[#262128] transition-colors shrink-0"
           >
             {collapsed ? (
               <ChevronRight className="w-4 h-4" />
@@ -138,16 +138,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => handleNavigate(item.id)}
                 title={collapsed ? item.label : undefined}
                 aria-current={isActive ? 'page' : undefined}
-                className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 whitespace-nowrap ${
                   isActive
-                    ? 'bg-blue-600/15 text-blue-400 border border-blue-500/30'
-                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 border border-transparent'
+                    ? 'bg-[#B51232] text-[#F4F1F3] border border-[#D01940]/60 crimson-glow-sm'
+                    : 'text-[#AAA3AD] hover:text-[#F4F1F3] hover:bg-[#262128] border border-transparent'
                 }`}
               >
                 <span className="flex items-center gap-3 min-w-0">
                   <Icon
                     className={`w-4 h-4 shrink-0 ${
-                      isActive ? 'text-blue-400' : 'text-slate-400'
+                      isActive ? 'text-[#F4F1F3]' : 'text-[#77717B]'
                     }`}
                   />
                   {!collapsed && <span className="truncate">{item.label}</span>}
@@ -156,9 +156,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {!collapsed && item.badgeCount !== undefined && (
                   <span
                     className={`text-[11px] font-mono tabular-nums font-semibold px-1.5 py-0.5 rounded ${
-                      item.id === 'alert-centre'
-                        ? 'bg-red-500/20 text-red-300'
-                        : 'bg-amber-500/20 text-amber-300'
+                      isActive
+                        ? 'bg-[#100E12]/40 text-[#F4F1F3]'
+                        : item.id === 'alert-centre'
+                          ? 'bg-[#B51232]/25 text-[#FB7185] border border-[#B51232]/40'
+                          : 'bg-[#F97316]/20 text-[#FB923C] border border-[#F97316]/30'
                     }`}
                   >
                     {item.badgeCount}
@@ -170,15 +172,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
 
         {/* Bottom Prototype Status & Operator Profile */}
-        <div className="border-t border-slate-800/80 p-3 space-y-3 shrink-0">
+        <div className="border-t border-[#343039] p-3 space-y-3 shrink-0">
           {!collapsed && (
-            <div className="px-2.5 py-2 rounded-lg bg-slate-900/80 border border-slate-800/80 flex items-center gap-2.5">
-              <Activity className="w-4 h-4 text-blue-400 shrink-0" />
+            <div className="px-2.5 py-2 rounded-lg bg-[#201C22] border border-[#343039] flex items-center gap-2.5">
+              <Activity className="w-4 h-4 text-[#D01940] shrink-0" />
               <div className="min-w-0">
-                <div className="text-[11px] font-medium text-slate-200 truncate">
+                <div className="text-[11px] font-medium text-[#F4F1F3] truncate">
                   Simulated Data Mode
                 </div>
-                <div className="text-[11px] text-slate-400 truncate">
+                <div className="text-[11px] text-[#77717B] truncate">
                   FastAPI / YOLOv8 Ready
                 </div>
               </div>
@@ -186,15 +188,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
 
           <div className="flex items-center gap-3 px-2 py-1.5">
-            <div className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-200 shrink-0">
-              <UserCheck className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-lg bg-[#262128] border border-[#343039] flex items-center justify-center text-[#F4F1F3] shrink-0">
+              <UserCheck className="w-4 h-4 text-[#AAA3AD]" />
             </div>
             {!collapsed && (
               <div className="min-w-0">
-                <div className="text-xs font-semibold text-slate-100 truncate">
+                <div className="text-xs font-semibold text-[#F4F1F3] truncate">
                   Transit Operations
                 </div>
-                <div className="text-[11px] text-slate-400 truncate">
+                <div className="text-[11px] text-[#77717B] truncate">
                   Command Duty Officer
                 </div>
               </div>

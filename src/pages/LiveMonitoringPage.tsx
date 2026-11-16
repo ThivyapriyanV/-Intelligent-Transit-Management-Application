@@ -19,16 +19,15 @@ export const LiveMonitoringPage: React.FC = () => {
   const [localFeedPlaying, setLocalFeedPlaying] = useState(true);
   const effectivePlaying = settings.simulationRunning && localFeedPlaying;
 
-  // Show cameras for selected station filter (or all 16, grouped cleanly)
   const visibleCameras = filteredStations.flatMap((s) => s.zones);
 
   return (
     <div className="space-y-6">
       {/* Control Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#343039]">
         <div>
-          <p className="text-xs sm:text-sm text-slate-300">
-            Simulated CCTV Crowd Detection Feed · Bounding boxes & tracking IDs are frontend
+          <p className="text-xs sm:text-sm text-[#AAA3AD]">
+            Simulated CCTV Crowd Detection Feed · Bounding boxes &amp; tracking IDs are frontend
             simulations prepared for YOLOv8 + BoT-SORT backend integration.
           </p>
         </div>
@@ -37,7 +36,7 @@ export const LiveMonitoringPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setLocalFeedPlaying((p) => !p)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition-colors whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#B51232] hover:bg-[#D01940] text-[#F4F1F3] text-xs font-medium transition-colors crimson-glow-sm whitespace-nowrap"
           >
             {localFeedPlaying ? (
               <>
@@ -55,7 +54,7 @@ export const LiveMonitoringPage: React.FC = () => {
           <button
             type="button"
             onClick={toggleSimulation}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#111827] hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-medium transition-colors whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#201C22] hover:bg-[#262128] border border-[#343039] text-[#F4F1F3] text-xs font-medium transition-colors whitespace-nowrap"
           >
             <span>
               {settings.simulationRunning ? 'Pause Global Telemetry' : 'Resume Global Telemetry'}
@@ -66,7 +65,7 @@ export const LiveMonitoringPage: React.FC = () => {
             type="button"
             onClick={triggerManualStep}
             aria-label="Step simulated passenger count"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#111827] hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-medium transition-colors whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#201C22] hover:bg-[#262128] border border-[#343039] text-[#F4F1F3] text-xs font-medium transition-colors whitespace-nowrap"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Step Simulation</span>
@@ -76,16 +75,16 @@ export const LiveMonitoringPage: React.FC = () => {
 
       {/* Main Layout: Large Selected Camera + Zone Telemetry Sidebar */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        <div className="xl:col-span-8 rounded-xl bg-[#111827] border border-slate-800/90 p-4 space-y-4">
+        <div className="xl:col-span-8 rounded-xl bg-[#201C22] border border-[#B51232]/50 crimson-glow p-4 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2.5">
-                <Camera className="w-4 h-4 text-blue-400" />
-                <h2 className="text-base font-semibold text-slate-100">
+                <Camera className="w-4 h-4 text-[#D01940]" />
+                <h2 className="text-base font-semibold text-[#F4F1F3] font-display">
                   {selectedCamera.stationName} — {selectedCamera.zoneName}
                 </h2>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-[#AAA3AD] mt-0.5">
                 {selectedCamera.cameraCode} · {selectedCamera.locationDescription}
               </p>
             </div>
@@ -100,30 +99,30 @@ export const LiveMonitoringPage: React.FC = () => {
 
           {/* Camera Metrics Footer */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-            <div className="p-3 rounded-lg bg-[#0F172A] border border-slate-800/80">
-              <div className="text-[11px] text-slate-400">Passenger Count</div>
-              <div className="text-lg font-semibold text-slate-100 font-mono tabular-nums mt-0.5">
+            <div className="p-3 rounded-lg bg-[#262128] border border-[#343039]">
+              <div className="text-[11px] text-[#AAA3AD]">Passenger Count</div>
+              <div className="text-lg font-semibold text-[#F4F1F3] font-mono tabular-nums mt-0.5">
                 {selectedCamera.status === 'ONLINE' ? selectedCamera.passengerCount : '—'}
               </div>
             </div>
-            <div className="p-3 rounded-lg bg-[#0F172A] border border-slate-800/80">
-              <div className="text-[11px] text-slate-400">Zone Capacity</div>
-              <div className="text-lg font-semibold text-slate-100 font-mono tabular-nums mt-0.5">
+            <div className="p-3 rounded-lg bg-[#262128] border border-[#343039]">
+              <div className="text-[11px] text-[#AAA3AD]">Zone Capacity</div>
+              <div className="text-lg font-semibold text-[#F4F1F3] font-mono tabular-nums mt-0.5">
                 {selectedCamera.capacity} pax
               </div>
             </div>
-            <div className="p-3 rounded-lg bg-[#0F172A] border border-slate-800/80">
-              <div className="text-[11px] text-slate-400">Zone Density</div>
-              <div className="text-lg font-semibold text-slate-100 font-mono tabular-nums mt-0.5">
+            <div className="p-3 rounded-lg bg-[#262128] border border-[#343039]">
+              <div className="text-[11px] text-[#AAA3AD]">Zone Density</div>
+              <div className="text-lg font-semibold text-[#F4F1F3] font-mono tabular-nums mt-0.5">
                 {selectedCamera.status === 'ONLINE' ? `${selectedCamera.occupancyPercentage}%` : 'N/A'}
               </div>
             </div>
-            <div className="p-3 rounded-lg bg-[#0F172A] border border-slate-800/80 flex flex-col justify-between">
-              <div className="text-[11px] text-slate-400">Camera Link Control</div>
+            <div className="p-3 rounded-lg bg-[#262128] border border-[#343039] flex flex-col justify-between">
+              <div className="text-[11px] text-[#AAA3AD]">Camera Link Control</div>
               <button
                 type="button"
                 onClick={() => toggleCameraOnlineStatus(selectedCamera.id)}
-                className="mt-1 text-left text-xs font-medium text-blue-400 hover:text-blue-300"
+                className="mt-1 text-left text-xs font-medium text-[#D01940] hover:text-[#FB7185] transition-colors"
               >
                 {selectedCamera.status === 'ONLINE'
                   ? 'Simulate Camera Offline'
@@ -134,12 +133,12 @@ export const LiveMonitoringPage: React.FC = () => {
         </div>
 
         {/* Right Side: Station Quick Zone List */}
-        <div className="xl:col-span-4 rounded-xl bg-[#111827] border border-slate-800/90 p-4 flex flex-col">
+        <div className="xl:col-span-4 rounded-xl bg-[#201C22] border border-[#343039] p-4 flex flex-col">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-slate-100">
+            <h3 className="text-sm font-medium text-[#F4F1F3] font-display">
               Camera Zones ({visibleCameras.length})
             </h3>
-            <span className="text-xs text-slate-400 font-mono tabular-nums">
+            <span className="text-xs text-[#AAA3AD] font-mono tabular-nums">
               {allCameras.filter((c) => c.status === 'ONLINE').length}/{allCameras.length} Online
             </span>
           </div>
@@ -152,19 +151,19 @@ export const LiveMonitoringPage: React.FC = () => {
                   key={cam.id}
                   type="button"
                   onClick={() => setSelectedCameraId(cam.id)}
-                  className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                  className={`w-full text-left p-3 rounded-lg border transition-all ${
                     isSelected
-                      ? 'bg-blue-600/15 border-blue-500/50'
-                      : 'bg-[#0F172A] border-slate-800 hover:border-slate-700'
+                      ? 'bg-[#B51232]/20 border-[#B51232] crimson-glow-sm'
+                      : 'bg-[#262128] border-[#343039] hover:border-[#B51232]/50'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="text-xs font-semibold text-slate-100 truncate">
+                    <span className="text-xs font-semibold text-[#F4F1F3] truncate">
                       {cam.stationName} · {cam.zoneName}
                     </span>
                     <CameraStatusTag status={cam.status} />
                   </div>
-                  <div className="flex items-center justify-between gap-2 text-xs text-slate-400 font-mono tabular-nums">
+                  <div className="flex items-center justify-between gap-2 text-xs text-[#AAA3AD] font-mono tabular-nums">
                     <span>{cam.cameraCode}</span>
                     <span>
                       {cam.status === 'ONLINE'
@@ -179,9 +178,9 @@ export const LiveMonitoringPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Camera Preview Cards Grid (4+ zones at a glance) */}
+      {/* Camera Preview Cards Grid */}
       <section aria-label="Zone Camera Previews" className="space-y-3">
-        <h3 className="text-sm font-semibold text-slate-100">
+        <h3 className="text-sm font-medium text-[#F4F1F3] font-display">
           Monitoring Zone Previews (Select feed to inspect)
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -192,25 +191,25 @@ export const LiveMonitoringPage: React.FC = () => {
                 key={cam.id}
                 type="button"
                 onClick={() => setSelectedCameraId(cam.id)}
-                className={`text-left rounded-xl p-3 border transition-colors ${
+                className={`text-left rounded-xl p-3 border transition-all ${
                   isSelected
-                    ? 'bg-[#162033] border-blue-500/60'
-                    : 'bg-[#111827] border-slate-800/90 hover:border-slate-700'
+                    ? 'bg-[#262128] border-[#B51232] crimson-glow-sm'
+                    : 'bg-[#201C22] border-[#343039] hover:border-[#B51232]/50'
                 }`}
               >
                 <SimulatedCctvCanvas zone={cam} isPlaying={effectivePlaying} compact />
                 <div className="mt-2.5 flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="text-xs font-semibold text-slate-100 truncate">
+                    <div className="text-xs font-semibold text-[#F4F1F3] truncate">
                       {cam.zoneName}
                     </div>
-                    <div className="text-[11px] text-slate-400 truncate">
+                    <div className="text-[11px] text-[#AAA3AD] truncate">
                       {cam.stationName} · {cam.cameraCode}
                     </div>
                   </div>
                   <DensityTag level={cam.densityLevel} />
                 </div>
-                <div className="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] font-mono tabular-nums text-slate-300">
+                <div className="mt-2 pt-2 border-t border-[#343039] flex items-center justify-between text-[11px] font-mono tabular-nums text-[#AAA3AD]">
                   <span>
                     {cam.status === 'ONLINE' ? `${cam.passengerCount} pax` : 'Offline'}
                   </span>

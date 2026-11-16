@@ -42,8 +42,7 @@ export const SimulatedCctvCanvas: React.FC<SimulatedCctvCanvasProps> = ({
     let lastDrawTime = 0;
 
     const drawScene = (nowMs: number) => {
-      // Cap software canvas redraws cleanly (~20fps when playing, single draw when paused)
-      if (isPlaying && nowMs - lastDrawTime < 50) {
+      if (isPlaying && nowMs - lastDrawTime < 55) {
         rafId = window.requestAnimationFrame(drawScene);
         return;
       }
@@ -66,17 +65,17 @@ export const SimulatedCctvCanvas: React.FC<SimulatedCctvCanvasProps> = ({
       const w = canvas.width;
       const h = canvas.height;
 
-      // 1. Background architectural ceiling & wall gradient
+      // 1. Dark obsidian architectural ceiling & floor gradient matching #100E12 / #151217
       const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
-      bgGrad.addColorStop(0, '#090E1A');
-      bgGrad.addColorStop(0.32, '#11192B');
-      bgGrad.addColorStop(0.33, '#172033');
-      bgGrad.addColorStop(1, '#0D1322');
+      bgGrad.addColorStop(0, '#0D0B0F');
+      bgGrad.addColorStop(0.32, '#151217');
+      bgGrad.addColorStop(0.33, '#1B171E');
+      bgGrad.addColorStop(1, '#100E12');
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, w, h);
 
       // 2. Perspective floor grid
-      ctx.strokeStyle = 'rgba(148, 163, 184, 0.12)';
+      ctx.strokeStyle = 'rgba(170, 163, 173, 0.10)';
       ctx.lineWidth = 1;
       const horizonY = h * 0.32;
       const vanishX = w * 0.5;
@@ -97,14 +96,12 @@ export const SimulatedCctvCanvas: React.FC<SimulatedCctvCanvasProps> = ({
 
       // 3. Scene-specific architectural cues
       if (zone.sceneType === 'platform') {
-        // Yellow platform safety edge strip
-        ctx.fillStyle = 'rgba(234, 179, 8, 0.32)';
+        ctx.fillStyle = 'rgba(234, 179, 8, 0.34)';
         ctx.fillRect(0, h * 0.88, w, h * 0.028);
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        ctx.fillStyle = 'rgba(16, 14, 18, 0.9)';
         ctx.fillRect(0, h * 0.91, w, h * 0.09);
       } else if (zone.sceneType === 'bus-bay') {
-        // Bus bay lane markings & shelter pillars
-        ctx.strokeStyle = 'rgba(59, 130, 246, 0.35)';
+        ctx.strokeStyle = 'rgba(181, 18, 50, 0.42)';
         ctx.setLineDash([12, 10]);
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -112,34 +109,31 @@ export const SimulatedCctvCanvas: React.FC<SimulatedCctvCanvasProps> = ({
         ctx.lineTo(w * 0.88, h * 0.84);
         ctx.stroke();
         ctx.setLineDash([]);
-        // Overhead bay pillars
-        ctx.fillStyle = '#1E293B';
+        ctx.fillStyle = '#262128';
         ctx.fillRect(w * 0.14, h * 0.1, w * 0.025, h * 0.42);
         ctx.fillRect(w * 0.835, h * 0.1, w * 0.025, h * 0.42);
       } else if (zone.sceneType === 'gate') {
-        // AFC fare turnstile barriers in mid-ground
-        ctx.fillStyle = '#1E293B';
-        ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
+        ctx.fillStyle = '#262128';
+        ctx.strokeStyle = 'rgba(170, 163, 173, 0.28)';
         for (let g = 0; g < 6; g++) {
           const gx = w * (0.16 + g * 0.13);
           ctx.fillRect(gx, h * 0.38, w * 0.026, h * 0.14);
           ctx.strokeRect(gx, h * 0.38, w * 0.026, h * 0.14);
-          ctx.fillStyle = '#10B981';
+          ctx.fillStyle = '#22C55E';
           ctx.fillRect(gx + w * 0.008, h * 0.39, w * 0.01, h * 0.012);
-          ctx.fillStyle = '#1E293B';
+          ctx.fillStyle = '#262128';
         }
       } else {
-        // Main concourse overhead light fixtures & structural columns
-        ctx.fillStyle = 'rgba(226, 232, 240, 0.08)';
+        ctx.fillStyle = 'rgba(244, 241, 243, 0.07)';
         for (let l = 0; l < 4; l++) {
           ctx.fillRect(w * (0.15 + l * 0.22), h * 0.07, w * 0.09, h * 0.025);
         }
-        ctx.fillStyle = '#1E293B';
+        ctx.fillStyle = '#262128';
         ctx.fillRect(w * 0.25, h * 0.08, w * 0.024, h * 0.36);
         ctx.fillRect(w * 0.72, h * 0.08, w * 0.024, h * 0.36);
       }
 
-      // 4. Sort detections back-to-front by Y so closer pedestrians occlude farther ones
+      // 4. Sort detections back-to-front by Y
       const sorted = [...detectionsRef.current].sort((a, b) => a.y - b.y);
       const boxColor = getDensityColorHex(zone.densityLevel);
 
@@ -153,17 +147,16 @@ export const SimulatedCctvCanvas: React.FC<SimulatedCctvCanvasProps> = ({
           : 0;
 
         // Ground shadow
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.48)';
         ctx.beginPath();
         ctx.ellipse(px + bw * 0.5, py + bh, bw * 0.45, bh * 0.06, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Pedestrian silhouette (head + torso + legs)
         const centerX = px + bw * 0.5;
         const headR = Math.max(3, bw * 0.22);
 
         // Legs
-        ctx.strokeStyle = '#94A3B8';
+        ctx.strokeStyle = '#AAA3AD';
         ctx.lineWidth = Math.max(2, bw * 0.16);
         ctx.lineCap = 'round';
         ctx.beginPath();
@@ -176,17 +169,11 @@ export const SimulatedCctvCanvas: React.FC<SimulatedCctvCanvasProps> = ({
         // Torso
         ctx.fillStyle = person.clothingTone;
         ctx.beginPath();
-        ctx.roundRect(
-          centerX - bw * 0.28,
-          py + headR * 2.1,
-          bw * 0.56,
-          bh * 0.42,
-          3,
-        );
+        ctx.roundRect(centerX - bw * 0.28, py + headR * 2.1, bw * 0.56, bh * 0.42, 3);
         ctx.fill();
 
         // Head
-        ctx.fillStyle = '#E2E8F0';
+        ctx.fillStyle = '#F4F1F3';
         ctx.beginPath();
         ctx.arc(centerX, py + headR * 1.1, headR, 0, Math.PI * 2);
         ctx.fill();
@@ -196,26 +183,22 @@ export const SimulatedCctvCanvas: React.FC<SimulatedCctvCanvasProps> = ({
         ctx.lineWidth = compact ? 1 : 1.5;
         ctx.strokeRect(px, py, bw, bh);
 
-        // Corner ticks for precision command-center bounding boxes
         if (!compact) {
           const tick = Math.min(8, bw * 0.3);
           ctx.lineWidth = 2.2;
           ctx.beginPath();
-          // Top-left
           ctx.moveTo(px, py + tick);
           ctx.lineTo(px, py);
           ctx.lineTo(px + tick, py);
-          // Top-right
           ctx.moveTo(px + bw - tick, py);
           ctx.lineTo(px + bw, py);
           ctx.lineTo(px + bw, py + tick);
           ctx.stroke();
 
-          // BoT-SORT Tracking ID tag
           const label = `ID-${person.trackingId} · ${Math.round(person.confidence * 100)}%`;
           ctx.font = '600 10px "JetBrains Mono", monospace';
           const textWidth = ctx.measureText(label).width;
-          ctx.fillStyle = 'rgba(11, 17, 32, 0.86)';
+          ctx.fillStyle = 'rgba(16, 14, 18, 0.88)';
           ctx.fillRect(px, Math.max(0, py - 15), textWidth + 8, 14);
           ctx.fillStyle = boxColor;
           ctx.fillText(label, px + 4, Math.max(10, py - 4));
@@ -223,7 +206,7 @@ export const SimulatedCctvCanvas: React.FC<SimulatedCctvCanvasProps> = ({
       });
 
       // Subtle scanline texture
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.018)';
+      ctx.fillStyle = 'rgba(244, 241, 243, 0.016)';
       for (let sy = 0; sy < h; sy += 4) {
         ctx.fillRect(0, sy, w, 1);
       }
@@ -247,16 +230,16 @@ export const SimulatedCctvCanvas: React.FC<SimulatedCctvCanvasProps> = ({
         data-testid="cctv-simulation-canvas"
         data-camera-id={zone.id}
         data-status="OFFLINE"
-        className={`relative w-full overflow-hidden rounded-lg bg-[#080C16] border border-red-500/30 flex flex-col items-center justify-center text-center p-4 ${
+        className={`relative w-full overflow-hidden rounded-lg bg-[#100E12] border border-[#B51232]/50 flex flex-col items-center justify-center text-center p-4 ${
           compact ? 'aspect-video' : 'aspect-video min-h-[320px]'
         }`}
       >
-        <WifiOff className={`${compact ? 'w-6 h-6' : 'w-10 h-10'} text-red-400 mb-2`} />
-        <div className={`${compact ? 'text-xs' : 'text-sm'} font-semibold text-red-300`}>
+        <WifiOff className={`${compact ? 'w-6 h-6' : 'w-10 h-10'} text-[#FB7185] mb-2`} />
+        <div className={`${compact ? 'text-xs' : 'text-sm'} font-semibold text-[#FB7185]`}>
           FEED OFFLINE — {zone.cameraCode}
         </div>
         {!compact && (
-          <p className="text-xs text-slate-400 mt-1 max-w-md">
+          <p className="text-xs text-[#AAA3AD] mt-1 max-w-md">
             Simulated camera stream unavailable for {zone.stationName} · {zone.zoneName}. Check
             Settings or toggle simulated camera status to restore stream.
           </p>
@@ -271,7 +254,7 @@ export const SimulatedCctvCanvas: React.FC<SimulatedCctvCanvasProps> = ({
       data-camera-id={zone.id}
       data-playing={String(isPlaying)}
       data-status="ONLINE"
-      className="relative w-full aspect-video rounded-lg overflow-hidden bg-[#080C16] border border-slate-800"
+      className="relative w-full aspect-video rounded-lg overflow-hidden bg-[#100E12] border border-[#343039]"
     >
       <canvas
         ref={canvasRef}
@@ -282,21 +265,23 @@ export const SimulatedCctvCanvas: React.FC<SimulatedCctvCanvasProps> = ({
 
       {/* Top HUD Overlay */}
       <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-2 pointer-events-none">
-        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-950/85 border border-slate-700/70 text-[11px] font-mono text-slate-100 whitespace-nowrap shrink-0">
+        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#100E12]/90 border border-[#343039] text-[11px] font-mono text-[#F4F1F3] whitespace-nowrap shrink-0">
           <span
             className={`w-2 h-2 rounded-full shrink-0 ${
-              isPlaying ? 'bg-red-500' : 'bg-amber-400'
+              isPlaying ? 'bg-[#D01940]' : 'bg-[#F97316]'
             }`}
           />
-          <span>{compact ? (isPlaying ? 'SIM' : 'PAUSED') : isPlaying ? 'SIMULATED LIVE' : 'PAUSED'}</span>
-          <span className="text-slate-500" aria-hidden="true">
+          <span>
+            {compact ? (isPlaying ? 'SIM' : 'PAUSED') : isPlaying ? 'SIMULATED LIVE' : 'PAUSED'}
+          </span>
+          <span className="text-[#77717B]" aria-hidden="true">
             |
           </span>
           <span>{zone.cameraCode}</span>
         </div>
 
         {!compact && (
-          <div className="px-2.5 py-1 rounded bg-slate-950/85 border border-slate-700/70 text-[11px] font-mono text-slate-300">
+          <div className="px-2.5 py-1 rounded bg-[#100E12]/90 border border-[#343039] text-[11px] font-mono text-[#AAA3AD]">
             SIMULATED CV OVERLAY · YOLOv8 + BoT-SORT PROTOTYPE
           </div>
         )}
@@ -305,10 +290,10 @@ export const SimulatedCctvCanvas: React.FC<SimulatedCctvCanvasProps> = ({
       {/* Bottom Telemetry Overlay */}
       {!compact && (
         <div className="absolute bottom-2.5 left-2.5 right-2.5 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
-          <div className="px-2.5 py-1 rounded bg-slate-950/85 border border-slate-700/70 text-[11px] font-mono tabular-nums text-slate-200">
+          <div className="px-2.5 py-1 rounded bg-[#100E12]/90 border border-[#343039] text-[11px] font-mono tabular-nums text-[#F4F1F3]">
             {zone.stationName} · {zone.zoneName} · {zone.resolution} · {zone.fpsSimulated} FPS
           </div>
-          <div className="px-2.5 py-1 rounded bg-slate-950/85 border border-slate-700/70 text-[11px] font-mono tabular-nums text-slate-200">
+          <div className="px-2.5 py-1 rounded bg-[#100E12]/90 border border-[#343039] text-[11px] font-mono tabular-nums text-[#F4F1F3]">
             Tracked Boxes: {trackedCount} · Est. Zone Count: {zone.passengerCount} pax
           </div>
         </div>

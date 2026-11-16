@@ -3,15 +3,27 @@
 
 @layer base {
   :root {
-    --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-display: 'Manrope', system-ui, -apple-system, sans-serif;
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+    --bg-app: #100E12;
+    --bg-sidebar: #121014;
+    --bg-main: #151217;
+    --bg-card: #201C22;
+    --bg-elevated: #262128;
+    --border-subtle: #343039;
+    --accent-primary: #B51232;
+    --accent-hover: #D01940;
+    --text-primary: #F4F1F3;
+    --text-secondary: #AAA3AD;
+    --text-muted: #77717B;
   }
 
   body {
     font-family: var(--font-sans);
-    background-color: #0B1120;
-    color: #F1F5F9;
+    background-color: #100E12;
+    color: #F4F1F3;
   }
 
   h1, h2, h3, h4, .font-display {
@@ -23,23 +35,31 @@
   }
 }
 
-/* Custom scrollbar for dark command-center aesthetic */
+.crimson-glow {
+  box-shadow: 0 0 24px -6px rgba(181, 18, 50, 0.36);
+}
+
+.crimson-glow-sm {
+  box-shadow: 0 0 14px -4px rgba(181, 18, 50, 0.3);
+}
+
+/* Custom scrollbar for obsidian-crimson command theme */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0B1120;
+  background: #100E12;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1E293B;
+  background: #343039;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #4B4452;
 }
 
 @media print {
