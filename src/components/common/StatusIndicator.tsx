@@ -2,18 +2,24 @@ import React from 'react';
 import {
   AlertOctagon,
   AlertTriangle,
+  Bus,
   CheckCircle2,
+  Clock,
   Info,
   Wifi,
   WifiOff,
+  Wrench,
+  XOctagon,
 } from 'lucide-react';
 import {
   AlertSeverity,
   AlertStatus,
+  BusFleetStatus,
   CameraStatus,
   CrowdDensityLevel,
   RecommendationPriority,
   RecommendationStatus,
+  RouteOperationalStatus,
 } from '../../types/transit';
 
 /**
@@ -160,4 +166,72 @@ export const RecommendationStatusText: React.FC<{ status: RecommendationStatus }
   };
   const item = map[status];
   return <span className={`text-xs font-medium whitespace-nowrap ${item.cls}`}>{item.label}</span>;
+};
+
+export const BusFleetStatusTag: React.FC<{ status: BusFleetStatus }> = ({ status }) => {
+  const config: Record<BusFleetStatus, { label: string; cls: string; icon: React.ReactNode }> = {
+    RUNNING: {
+      label: 'RUNNING',
+      cls: 'text-[#4ADE80] border-[#22C55E]/30 bg-[#22C55E]/10',
+      icon: <Bus className="w-3.5 h-3.5 shrink-0" />,
+    },
+    AVAILABLE: {
+      label: 'AVAILABLE',
+      cls: 'text-[#FACC15] border-[#EAB308]/30 bg-[#EAB308]/10',
+      icon: <Clock className="w-3.5 h-3.5 shrink-0" />,
+    },
+    MAINTENANCE: {
+      label: 'MAINTENANCE',
+      cls: 'text-[#FB923C] border-[#F97316]/35 bg-[#F97316]/12',
+      icon: <Wrench className="w-3.5 h-3.5 shrink-0" />,
+    },
+    'OUT OF SERVICE': {
+      label: 'OUT OF SERVICE',
+      cls: 'text-[#FB7185] border-[#B51232]/60 bg-[#B51232]/20',
+      icon: <XOctagon className="w-3.5 h-3.5 shrink-0" />,
+    },
+  };
+  const item = config[status];
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-semibold rounded border whitespace-nowrap shrink-0 ${item.cls}`}
+    >
+      {item.icon}
+      <span>{item.label}</span>
+    </span>
+  );
+};
+
+export const RouteStatusTag: React.FC<{ status: RouteOperationalStatus }> = ({ status }) => {
+  const config: Record<RouteOperationalStatus, { label: string; cls: string; icon: React.ReactNode }> = {
+    OPTIMAL: {
+      label: 'Optimal',
+      cls: 'text-[#4ADE80] border-[#22C55E]/30 bg-[#22C55E]/10',
+      icon: <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />,
+    },
+    WATCH: {
+      label: 'Standby Ready',
+      cls: 'text-[#FACC15] border-[#EAB308]/30 bg-[#EAB308]/10',
+      icon: <Info className="w-3.5 h-3.5 shrink-0" />,
+    },
+    DEFICIT: {
+      label: 'Shortfall',
+      cls: 'text-[#FB923C] border-[#F97316]/35 bg-[#F97316]/12',
+      icon: <AlertTriangle className="w-3.5 h-3.5 shrink-0" />,
+    },
+    CRITICAL: {
+      label: 'Critical Deficit',
+      cls: 'text-[#FB7185] border-[#B51232]/60 bg-[#B51232]/20',
+      icon: <AlertOctagon className="w-3.5 h-3.5 shrink-0" />,
+    },
+  };
+  const item = config[status];
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded border whitespace-nowrap shrink-0 ${item.cls}`}
+    >
+      {item.icon}
+      <span>{item.label}</span>
+    </span>
+  );
 };

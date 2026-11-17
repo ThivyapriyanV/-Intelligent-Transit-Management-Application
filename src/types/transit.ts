@@ -5,6 +5,7 @@ export type PageId =
   | 'crowd-prediction'
   | 'alert-centre'
   | 'bus-recommendations'
+  | 'bus-fleet'
   | 'reports'
   | 'settings';
 
@@ -18,7 +19,8 @@ export type AlertCategory =
   | 'High Crowd Density'
   | 'Critical Overcrowding'
   | 'Camera Offline'
-  | 'Rapid Passenger Increase';
+  | 'Rapid Passenger Increase'
+  | 'Fleet Shortage';
 
 export type AlertSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
 
@@ -138,16 +140,82 @@ export interface BusRecommendation {
   id: string;
   stationId: StationId;
   stationName: string;
+  routeId?: string;
+  routeName?: string;
   currentPassengers: number;
   predictedPassengers: number;
   occupancyPercentage: number;
   crowdSeverity: CrowdDensityLevel;
   recommendedAdditionalBuses: number;
+  allocatedBuses?: number;
+  runningBuses?: number;
+  availableBuses?: number;
+  unavailableBuses?: number;
+  requiredBuses?: number;
+  deployableAvailableBuses?: number;
+  netShortfallBuses?: number;
   priority: RecommendationPriority;
   suggestedDeploymentTime: string;
   reason: string;
   status: RecommendationStatus;
   updatedAt: string;
+}
+
+export type BusFleetStatus = 'RUNNING' | 'AVAILABLE' | 'MAINTENANCE' | 'OUT OF SERVICE';
+
+export type RouteOperationalStatus = 'OPTIMAL' | 'WATCH' | 'DEFICIT' | 'CRITICAL';
+
+export interface FleetBus {
+  id: string;
+  routeId: string;
+  routeName: string;
+  status: BusFleetStatus;
+  passengerOccupancy: number;
+  capacity: number;
+  lastUpdated: string;
+}
+
+export interface RouteAllocation {
+  routeId: string;
+  routeName: string;
+  primaryStationId: StationId;
+  startingStationId: StationId;
+  startingStationName: string;
+  destinationStationId: StationId;
+  destinationStationName: string;
+  totalAllocatedBuses: number;
+  runningBuses: number;
+  availableBuses: number;
+  maintenanceBuses: number;
+  outOfServiceOnlyBuses: number;
+  outOfServiceTotal: number; // maintenance + out of service
+  currentPassengerDemand: number;
+  predictedPassengerDemand: number;
+  occupancyPercentage: number;
+  requiredBuses: number;
+  requiredFleetCapacity: number;
+  allocatedFleetCapacity: number;
+  runningFleetCapacity: number;
+  additionalBusesRequired: number; // max(0, requiredBuses - runningBuses)
+  deployableAvailableBuses: number; // min(availableBuses, additionalBusesRequired)
+  netShortfallBuses: number; // max(0, additionalBusesRequired - deployableAvailableBuses)
+  utilizationPercentage: number;
+  routeStatus: RouteOperationalStatus;
+}
+
+export interface FleetSummary {
+  totalAllocatedBuses: number;
+  runningBuses: number;
+  availableBuses: number;
+  maintenanceBuses: number;
+  outOfServiceOnlyBuses: number;
+  outOfServiceTotal: number;
+  fleetUtilizationPercentage: number;
+  operationalAvailabilityPercentage: number;
+  totalRequiredBuses: number;
+  totalAdditionalBusesRequired: number;
+  totalDeployableAvailable: number;
+  totalNetShortfall: number;
 }
 
 export interface HourlyFlowPoint {

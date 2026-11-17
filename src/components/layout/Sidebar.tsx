@@ -10,6 +10,7 @@ import {
   FileSpreadsheet,
   LayoutDashboard,
   Radar,
+  Route,
   Settings,
   TrendingUp,
   UserCheck,
@@ -59,6 +60,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: BusFront,
       badgeCount: pendingRecsCount > 0 ? pendingRecsCount : undefined,
     },
+    {
+      id: 'bus-fleet',
+      label: 'Bus Fleet & Route Management',
+      icon: Route,
+    },
     { id: 'reports', label: 'Reports', icon: FileSpreadsheet },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
@@ -81,7 +87,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <aside
         aria-label="Primary Navigation"
         className={`no-print fixed lg:sticky top-0 left-0 z-50 h-screen flex flex-col bg-[#121014] border-r border-[#343039] transition-all duration-200 shrink-0 ${
-          collapsed ? 'w-[72px]' : 'w-[260px]'
+          collapsed ? 'w-[72px]' : 'w-[276px]'
         } ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         {/* Brand Header */}
@@ -138,7 +144,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => handleNavigate(item.id)}
                 title={collapsed ? item.label : undefined}
                 aria-current={isActive ? 'page' : undefined}
-                className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 whitespace-nowrap ${
+                className={`w-full flex items-center justify-between gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150 whitespace-nowrap ${
                   isActive
                     ? 'bg-[#B51232] text-[#F4F1F3] border border-[#D01940]/60 crimson-glow-sm'
                     : 'text-[#AAA3AD] hover:text-[#F4F1F3] hover:bg-[#262128] border border-transparent'

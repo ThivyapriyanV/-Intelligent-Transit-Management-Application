@@ -1,5 +1,5 @@
 import React from 'react';
-import { BusFront, CheckCircle2, ClipboardCheck, Info } from 'lucide-react';
+import { ArrowRight, BusFront, CheckCircle2, ClipboardCheck, Info } from 'lucide-react';
 import { useTransit } from '../context/TransitContext';
 import {
   DensityTag,
@@ -8,7 +8,12 @@ import {
 } from '../components/common/StatusIndicator';
 
 export const BusRecommendationsPage: React.FC = () => {
-  const { recommendations, selectedStationFilter, updateRecommendationStatus } = useTransit();
+  const {
+    recommendations,
+    selectedStationFilter,
+    updateRecommendationStatus,
+    setActivePage,
+  } = useTransit();
 
   const visibleRecommendations =
     selectedStationFilter === 'all'
@@ -19,6 +24,14 @@ export const BusRecommendationsPage: React.FC = () => {
     (sum, r) => sum + r.recommendedAdditionalBuses,
     0,
   );
+  const totalStandbyAvailable = visibleRecommendations.reduce(
+    (sum, r) => sum + (r.deployableAvailableBuses ?? 0),
+    0,
+  );
+  const totalExternalShortfall = visibleRecommendations.reduce(
+    (sum, r) => sum + (r.netShortfallBuses ?? 0),
+    0,
+  );
   const urgentOrHighCount = visibleRecommendations.filter(
     (r) => r.priority === 'URGENT' || r.priority === 'HIGH',
   ).length;
@@ -27,20 +40,31 @@ export const BusRecommendationsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Prototype Advisory Notice */}
-      <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-[#201C22] border border-[#B51232]/40 text-xs text-[#AAA3AD]">
-        <Info className="w-4 h-4 text-[#D01940] shrink-0 mt-0.5" />
-        <span>
-          <strong className="text-[#F4F1F3]">Decision Support Prototype Only:</strong> Bus
-          deployment suggestions are calculated from simulated station occupancy and +30m Holt
-          forecasts. Marking an item as Reviewed or Assigned records operator intent locally and
-          does not dispatch real transit vehicles.
-        </span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 rounded-xl bg-[#201C22] border border-[#B51232]/40 text-xs text-[#AAA3AD]">
+        <div className="flex items-start gap-2.5">
+          <Info className="w-4 h-4 text-[#D01940] shrink-0 mt-0.5" />
+          <span>
+            <strong className="text-[#F4F1F3]">Decision Support Prototype Only:</strong> Bus
+            deployment requirements are computed from simulated demand and active fleet telemetry (
+            <span className="font-mono text-[#F4F1F3]">Required − Running</span>), considering only{' '}
+            <span className="font-mono text-[#FACC15]">AVAILABLE</span> standby buses and excluding
+            maintenance or out-of-service units.
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setActivePage('bus-fleet')}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#262128] hover:bg-[#343039]/60 border border-[#343039] text-[#F4F1F3] text-xs font-medium transition-colors whitespace-nowrap shrink-0 self-start sm:self-auto"
+        >
+          <span>Open Fleet &amp; Routes</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </button>
       </div>
 
       {/* Priority Overview Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="rounded-xl bg-[#201C22] border border-[#343039] p-4">
-          <div className="text-xs text-[#AAA3AD]">Stations Requiring Additional Buses</div>
+          <div className="text-xs text-[#AAA3AD]">Corridors Requiring Buses</div>
           <div className="text-2xl font-semibold text-[#F4F1F3] font-display tabular-nums mt-1">
             {visibleRecommendations.length}
           </div>
@@ -49,11 +73,23 @@ export const BusRecommendationsPage: React.FC = () => {
           </div>
         </div>
         <div className="rounded-xl bg-[#201C22] border border-[#343039] p-4">
-          <div className="text-xs text-[#AAA3AD]">Total Additional Buses Suggested</div>
+          <div className="text-xs text-[#AAA3AD]">Total Additional Buses Required</div>
           <div className="text-2xl font-semibold text-[#D01940] font-display tabular-nums mt-1">
             {totalBusesRecommended}
           </div>
-          <div className="text-xs text-[#77717B] mt-1">Based on 55-passenger standard bus load</div>
+          <div className="text-xs text-[#77717B] mt-1">Required − Currently Running</div>
+        </div>
+        <div className="rounded-xl bg-[#201C22] border border-[#343039] p-4">
+          <div className="text-xs text-[#AAA3AD]">Coverable by Standby / Shortfall</div>
+          <div className="text-2xl font-semibold text-[#FACC15] font-display tabular-nums mt-1">
+            {totalStandbyAvailable}{' '}
+            <span className="text-sm font-normal text-[#FB7185]">
+              / {totalExternalShortfall} shortfall
+            </span>
+          </div>
+          <div className="text-xs text-[#77717B] mt-1">
+            Maintenance &amp; OOS buses excluded
+          </div>
         </div>
         <div className="rounded-xl bg-[#201C22] border border-[#343039] p-4">
           <div className="text-xs text-[#AAA3AD]">Operator Workflow Progress</div>
@@ -72,7 +108,7 @@ export const BusRecommendationsPage: React.FC = () => {
             No additional bus deployments recommended for the selected station scope.
           </p>
           <p className="text-xs text-[#AAA3AD] mt-1">
-            Current and projected passenger volumes remain below the 65% capacity threshold.
+            Currently running fleet capacity meets projected passenger demand.
           </p>
         </div>
       ) : (
@@ -92,9 +128,10 @@ export const BusRecommendationsPage: React.FC = () => {
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <h3 className="text-base font-semibold text-[#F4F1F3] font-display">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <h3 className="text-base font-semibold text-[#F4F1F3] font-display truncate">
                         {rec.stationName}
+                        {rec.routeId ? ` · ${rec.routeId}` : ''}
                       </h3>
                       <PriorityTag priority={rec.priority} />
                     </div>
@@ -104,21 +141,27 @@ export const BusRecommendationsPage: React.FC = () => {
                   <p className="text-xs text-[#AAA3AD]">{rec.reason}</p>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 py-3 border-y border-[#343039] text-xs">
+                <div className="grid grid-cols-4 gap-2 py-3 border-y border-[#343039] text-xs">
                   <div>
-                    <div className="text-[#77717B]">Current</div>
+                    <div className="text-[#77717B]">Required</div>
                     <div className="text-base font-semibold text-[#F4F1F3] font-display tabular-nums mt-0.5">
-                      {rec.currentPassengers}
+                      {rec.requiredBuses ?? '—'}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[#77717B]">Predicted (+30m)</div>
-                    <div className="text-base font-semibold text-[#F4F1F3] font-display tabular-nums mt-0.5">
-                      {rec.predictedPassengers}
+                    <div className="text-[#77717B]">Running</div>
+                    <div className="text-base font-semibold text-[#4ADE80] font-display tabular-nums mt-0.5">
+                      {rec.runningBuses ?? '—'}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[#77717B]">Rec. Buses</div>
+                    <div className="text-[#77717B]">Avail. Standby</div>
+                    <div className="text-base font-semibold text-[#FACC15] font-display tabular-nums mt-0.5">
+                      {rec.deployableAvailableBuses ?? 0}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[#77717B]">Add. Needed</div>
                     <div className="text-base font-semibold text-[#D01940] font-display tabular-nums mt-0.5">
                       +{rec.recommendedAdditionalBuses}
                     </div>
@@ -167,11 +210,12 @@ export const BusRecommendationsPage: React.FC = () => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-[#343039] text-xs font-medium text-[#AAA3AD] bg-[#262128]">
-                    <th className="py-3 px-4">Station</th>
-                    <th className="py-3 px-4 text-right">Current Pax</th>
-                    <th className="py-3 px-4 text-right">Predicted Pax</th>
-                    <th className="py-3 px-4">Severity</th>
-                    <th className="py-3 px-4 text-right">Add. Buses</th>
+                    <th className="py-3 px-4">Station / Route</th>
+                    <th className="py-3 px-4 text-right">Demand Pax</th>
+                    <th className="py-3 px-4 text-right">Running</th>
+                    <th className="py-3 px-4 text-right">Required</th>
+                    <th className="py-3 px-4 text-right">Add. Needed</th>
+                    <th className="py-3 px-4 text-right">Standby / Shortfall</th>
                     <th className="py-3 px-4">Priority</th>
                     <th className="py-3 px-4">Suggested Window</th>
                     <th className="py-3 px-4">Status</th>
@@ -180,18 +224,30 @@ export const BusRecommendationsPage: React.FC = () => {
                 <tbody className="divide-y divide-[#343039] text-sm">
                   {visibleRecommendations.map((rec) => (
                     <tr key={rec.id} className="hover:bg-[#B51232]/10 transition-colors">
-                      <td className="py-3 px-4 font-medium text-[#F4F1F3]">{rec.stationName}</td>
+                      <td className="py-3 px-4">
+                        <div className="font-medium text-[#F4F1F3]">{rec.stationName}</div>
+                        {rec.routeName && (
+                          <div className="text-[11px] font-mono text-[#77717B]">
+                            {rec.routeId} · {rec.routeName}
+                          </div>
+                        )}
+                      </td>
                       <td className="py-3 px-4 text-right font-mono tabular-nums text-[#AAA3AD]">
                         {rec.currentPassengers}
                       </td>
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-[#F4F1F3]">
-                        {rec.predictedPassengers}
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-[#4ADE80]">
+                        {rec.runningBuses ?? '—'}
                       </td>
-                      <td className="py-3 px-4">
-                        <DensityTag level={rec.crowdSeverity} />
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-[#F4F1F3]">
+                        {rec.requiredBuses ?? '—'}
                       </td>
                       <td className="py-3 px-4 text-right font-mono tabular-nums font-semibold text-[#D01940]">
                         {rec.recommendedAdditionalBuses}
+                      </td>
+                      <td className="py-3 px-4 text-right font-mono text-xs tabular-nums text-[#AAA3AD]">
+                        <span className="text-[#FACC15]">{rec.deployableAvailableBuses ?? 0}</span>{' '}
+                        /{' '}
+                        <span className="text-[#FB7185]">{rec.netShortfallBuses ?? 0} ext</span>
                       </td>
                       <td className="py-3 px-4">
                         <PriorityTag priority={rec.priority} />

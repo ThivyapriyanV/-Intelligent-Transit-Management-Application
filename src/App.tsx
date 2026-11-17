@@ -8,6 +8,7 @@ import { CrowdAnalyticsPage } from './pages/CrowdAnalyticsPage';
 import { CrowdPredictionPage } from './pages/CrowdPredictionPage';
 import { AlertCentrePage } from './pages/AlertCentrePage';
 import { BusRecommendationsPage } from './pages/BusRecommendationsPage';
+import { BusFleetPage } from './pages/BusFleetPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
 
@@ -30,6 +31,8 @@ const TransitWorkspace: React.FC = () => {
         return <AlertCentrePage />;
       case 'bus-recommendations':
         return <BusRecommendationsPage />;
+      case 'bus-fleet':
+        return <BusFleetPage />;
       case 'reports':
         return <ReportsPage />;
       case 'settings':

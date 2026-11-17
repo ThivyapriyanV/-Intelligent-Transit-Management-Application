@@ -1,10 +1,14 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
+  BusFleetStatus,
   BusRecommendation,
   CameraZone,
   DensityThresholds,
+  FleetBus,
+  FleetSummary,
   PageId,
   RecommendationStatus,
+  RouteAllocation,
   Station,
   StationForecast,
   StationId,
@@ -12,7 +16,17 @@ import {
   TransitAlert,
 } from '../types/transit';
 import { buildStationForecast } from '../services/densityClassifier';
-import { evaluateZoneAlerts, generateBusRecommendations } from '../services/decisionEngine';
+import {
+  evaluateFleetAlerts,
+  evaluateZoneAlerts,
+  generateBusRecommendations,
+} from '../services/decisionEngine';
+import {
+  computeFleetSummary,
+  computeRouteAllocations,
+  createInitialFleetBuses,
+  stepSimulatedFleetBuses,
+} from '../services/fleetService';
 import {
   createInitialAlerts,
   createInitialStations,
@@ -41,6 +55,9 @@ interface TransitContextValue {
   alerts: TransitAlert[];
   activeAlertsCount: number;
   recommendations: BusRecommendation[];
+  fleetBuses: FleetBus[];
+  routeAllocations: RouteAllocation[];
+  fleetSummary: FleetSummary;
   hourlyFlow: ReturnType<typeof getHourlyFlowSeries>;
   settings: SystemSettings;
   toggleSimulation: () => void;
@@ -50,6 +67,7 @@ interface TransitContextValue {
   acknowledgeAlert: (alertId: string) => void;
   resolveAlert: (alertId: string) => void;
   updateRecommendationStatus: (recId: string, status: RecommendationStatus) => void;
+  toggleBusAvailability: (busId: string, targetStatus?: BusFleetStatus) => void;
   toggleCameraOnlineStatus: (cameraId: string) => void;
   resetSimulationData: () => void;
 }
@@ -67,7 +85,29 @@ export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [stationState, setStationState] = useState(() =>
     createInitialStations(DEFAULT_SYSTEM_SETTINGS.thresholds, new Date()),
   );
-  const [alerts, setAlerts] = useState<TransitAlert[]>(() => createInitialAlerts(new Date()));
+  const [fleetBuses, setFleetBuses] = useState<FleetBus[]>(() =>
+    createInitialFleetBuses(new Date(), DEFAULT_SYSTEM_SETTINGS.busCapacityAssumed),
+  );
+  const [alerts, setAlerts] = useState<TransitAlert[]>(() => {
+    const now = new Date();
+    const initialStations = createInitialStations(DEFAULT_SYSTEM_SETTINGS.thresholds, now);
+    const initialForecasts = initialStations.stations.map((s) =>
+      buildStationForecast(
+        s,
+        initialStations.historyByStation[s.id] ?? [s.currentPassengers],
+        DEFAULT_SYSTEM_SETTINGS.thresholds,
+        now,
+      ),
+    );
+    const initialBuses = createInitialFleetBuses(now, DEFAULT_SYSTEM_SETTINGS.busCapacityAssumed);
+    const initialRoutes = computeRouteAllocations(
+      initialBuses,
+      initialStations.stations,
+      initialForecasts,
+      DEFAULT_SYSTEM_SETTINGS,
+    );
+    return evaluateFleetAlerts(initialRoutes, createInitialAlerts(now), now);
+  });
   const [recommendationStatuses, setRecommendationStatuses] = useState<
     Record<string, RecommendationStatus>
   >({});
@@ -80,24 +120,61 @@ export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return () => window.clearInterval(timer);
   }, []);
 
+  const forecasts = useMemo(() => {
+    return stationState.stations.map((station) =>
+      buildStationForecast(
+        station,
+        stationState.historyByStation[station.id] ?? [station.currentPassengers],
+        settings.thresholds,
+        currentTime,
+      ),
+    );
+  }, [stationState.stations, stationState.historyByStation, settings.thresholds, currentTime]);
+
+  const routeAllocations = useMemo(
+    () => computeRouteAllocations(fleetBuses, stationState.stations, forecasts, settings),
+    [fleetBuses, stationState.stations, forecasts, settings],
+  );
+
+  const fleetSummary = useMemo(
+    () => computeFleetSummary(fleetBuses, routeAllocations),
+    [fleetBuses, routeAllocations],
+  );
+
   const performSimulationStep = useCallback(
     (nextTick: number, currentSettings: SystemSettings) => {
       const now = new Date();
-      setStationState((prev) => {
-        const stepped = stepSimulatedStations(
-          prev.stations,
-          prev.historyByStation,
-          nextTick,
+      const stepped = stepSimulatedStations(
+        stationState.stations,
+        stationState.historyByStation,
+        nextTick,
+        currentSettings.thresholds,
+        now,
+      );
+      const nextForecasts = stepped.stations.map((station) =>
+        buildStationForecast(
+          station,
+          stepped.historyByStation[station.id] ?? [station.currentPassengers],
           currentSettings.thresholds,
           now,
-        );
-        setAlerts((prevAlerts) =>
-          evaluateZoneAlerts(stepped.stations, prevAlerts, currentSettings, now),
-        );
-        return stepped;
+        ),
+      );
+      const nextRoutes = computeRouteAllocations(
+        fleetBuses,
+        stepped.stations,
+        nextForecasts,
+        currentSettings,
+      );
+      const nextBuses = stepSimulatedFleetBuses(fleetBuses, nextRoutes, nextTick, now);
+
+      setStationState(stepped);
+      setFleetBuses(nextBuses);
+      setAlerts((prevAlerts) => {
+        const withZones = evaluateZoneAlerts(stepped.stations, prevAlerts, currentSettings, now);
+        return evaluateFleetAlerts(nextRoutes, withZones, now);
       });
     },
-    [],
+    [stationState, fleetBuses],
   );
 
   // Controlled periodic simulation updates
@@ -159,6 +236,42 @@ export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ child
     [],
   );
 
+  const toggleBusAvailability = useCallback(
+    (busId: string, targetStatus?: BusFleetStatus) => {
+      const now = new Date();
+      const iso = now.toISOString();
+
+      const nextBuses = fleetBuses.map((bus) => {
+        if (bus.id !== busId) {
+          return bus;
+        }
+        const resolvedStatus: BusFleetStatus =
+          targetStatus ??
+          (bus.status === 'RUNNING' || bus.status === 'AVAILABLE'
+            ? 'OUT OF SERVICE'
+            : 'AVAILABLE');
+        return {
+          ...bus,
+          status: resolvedStatus,
+          passengerOccupancy:
+            resolvedStatus === 'RUNNING' ? Math.round(bus.capacity * 0.78) : 0,
+          lastUpdated: iso,
+        };
+      });
+
+      const nextRoutes = computeRouteAllocations(
+        nextBuses,
+        stationState.stations,
+        forecasts,
+        settings,
+      );
+
+      setFleetBuses(nextBuses);
+      setAlerts((prevAlerts) => evaluateFleetAlerts(nextRoutes, prevAlerts, now));
+    },
+    [fleetBuses, stationState.stations, forecasts, settings],
+  );
+
   const toggleCameraOnlineStatus = useCallback(
     (cameraId: string) => {
       const now = new Date();
@@ -198,9 +311,27 @@ export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const resetSimulationData = useCallback(() => {
     const now = new Date();
+    const initialStations = createInitialStations(DEFAULT_SYSTEM_SETTINGS.thresholds, now);
+    const initialBuses = createInitialFleetBuses(now, DEFAULT_SYSTEM_SETTINGS.busCapacityAssumed);
+    const initialForecasts = initialStations.stations.map((s) =>
+      buildStationForecast(
+        s,
+        initialStations.historyByStation[s.id] ?? [s.currentPassengers],
+        DEFAULT_SYSTEM_SETTINGS.thresholds,
+        now,
+      ),
+    );
+    const initialRoutes = computeRouteAllocations(
+      initialBuses,
+      initialStations.stations,
+      initialForecasts,
+      DEFAULT_SYSTEM_SETTINGS,
+    );
+
     setSettings(DEFAULT_SYSTEM_SETTINGS);
-    setStationState(createInitialStations(DEFAULT_SYSTEM_SETTINGS.thresholds, now));
-    setAlerts(createInitialAlerts(now));
+    setStationState(initialStations);
+    setFleetBuses(initialBuses);
+    setAlerts(evaluateFleetAlerts(initialRoutes, createInitialAlerts(now), now));
     setRecommendationStatuses({});
     setTickCount(0);
   }, []);
@@ -221,17 +352,6 @@ export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return allCameras.find((c) => c.id === selectedCameraId) ?? allCameras[0];
   }, [allCameras, selectedCameraId]);
 
-  const forecasts = useMemo(() => {
-    return stationState.stations.map((station) =>
-      buildStationForecast(
-        station,
-        stationState.historyByStation[station.id] ?? [station.currentPassengers],
-        settings.thresholds,
-        currentTime,
-      ),
-    );
-  }, [stationState.stations, stationState.historyByStation, settings.thresholds, currentTime]);
-
   const recommendations = useMemo(() => {
     const baseRecs = generateBusRecommendations(
       stationState.stations,
@@ -239,12 +359,13 @@ export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ child
       settings,
       [],
       currentTime,
+      routeAllocations,
     );
     return baseRecs.map((rec) => ({
       ...rec,
       status: recommendationStatuses[rec.id] ?? rec.status,
     }));
-  }, [stationState.stations, forecasts, settings, recommendationStatuses, currentTime]);
+  }, [stationState.stations, forecasts, settings, recommendationStatuses, currentTime, routeAllocations]);
 
   const hourlyFlow = useMemo(
     () => getHourlyFlowSeries(stationState.stations),
@@ -273,6 +394,9 @@ export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ child
     alerts,
     activeAlertsCount,
     recommendations,
+    fleetBuses,
+    routeAllocations,
+    fleetSummary,
     hourlyFlow,
     settings,
     toggleSimulation,
@@ -282,6 +406,7 @@ export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ child
     acknowledgeAlert,
     resolveAlert,
     updateRecommendationStatus,
+    toggleBusAvailability,
     toggleCameraOnlineStatus,
     resetSimulationData,
   };

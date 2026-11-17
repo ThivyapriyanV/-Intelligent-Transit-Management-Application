@@ -20,6 +20,7 @@ const PAGE_TITLES: Record<PageId, string> = {
   'crowd-prediction': 'Passenger Flow Prediction',
   'alert-centre': 'Alert Management Centre',
   'bus-recommendations': 'Bus Deployment Recommendations',
+  'bus-fleet': 'Bus Fleet & Route Allocation',
   reports: 'Transit Reports & Export',
   settings: 'System Configuration',
 };
@@ -31,6 +32,7 @@ const PAGE_BREADCRUMBS: Record<PageId, string> = {
   'crowd-prediction': 'Crowd Prediction',
   'alert-centre': 'Alert Centre',
   'bus-recommendations': 'Bus Recommendations',
+  'bus-fleet': 'Bus Fleet & Routes',
   reports: 'Reports',
   settings: 'Settings',
 };

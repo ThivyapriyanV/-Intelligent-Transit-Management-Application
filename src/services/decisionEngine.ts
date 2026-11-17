@@ -2,6 +2,7 @@ import {
   BusRecommendation,
   RecommendationPriority,
   RecommendationStatus,
+  RouteAllocation,
   Station,
   StationForecast,
   SystemSettings,
@@ -57,16 +58,29 @@ function buildRecommendationReason(
   return `Elevated corridor load (${station.occupancyPercentage}% current, ${predictedOccupancy}% projected) exceeds 65% comfort threshold.`;
 }
 
+function buildFleetRecommendationReason(
+  station: Station,
+  route: RouteAllocation,
+): string {
+  return `${route.routeId} (${route.routeName}): ${route.requiredBuses} buses required vs ${route.runningBuses} running (${route.additionalBusesRequired} needed · ${route.deployableAvailableBuses} available standby, ${route.netShortfallBuses} external shortfall; ${route.outOfServiceTotal} maint./OOS excluded). Station occupancy ${station.occupancyPercentage}%.`;
+}
+
 export function generateBusRecommendations(
   stations: Station[],
   forecasts: StationForecast[],
   settings: SystemSettings,
   previousRecommendations: BusRecommendation[],
   referenceTime: Date,
+  routeAllocations?: RouteAllocation[],
 ): BusRecommendation[] {
   const prevByStation = new Map<string, BusRecommendation>();
   previousRecommendations.forEach((rec) => {
     prevByStation.set(rec.stationId, rec);
+  });
+
+  const routeByPrimaryStation = new Map<string, RouteAllocation>();
+  routeAllocations?.forEach((r) => {
+    routeByPrimaryStation.set(r.primaryStationId, r);
   });
 
   const recs: BusRecommendation[] = [];
@@ -78,12 +92,16 @@ export function generateBusRecommendations(
       ? horizon30.predictedPassengers
       : station.currentPassengers;
 
-    const buses = computeRecommendedBuses(
-      station.currentPassengers,
-      predictedPassengers,
-      station.totalCapacity,
-      settings.busCapacityAssumed,
-    );
+    const linkedRoute = routeByPrimaryStation.get(station.id);
+
+    const buses = linkedRoute
+      ? linkedRoute.additionalBusesRequired
+      : computeRecommendedBuses(
+          station.currentPassengers,
+          predictedPassengers,
+          station.totalCapacity,
+          settings.busCapacityAssumed,
+        );
 
     if (buses <= 0) {
       return;
@@ -93,10 +111,22 @@ export function generateBusRecommendations(
       predictedPassengers,
       station.totalCapacity,
     );
-    const priority = determineRecommendationPriority(
+    let priority = determineRecommendationPriority(
       station.occupancyPercentage,
       predictedOccupancy,
     );
+    if (linkedRoute) {
+      if (linkedRoute.netShortfallBuses >= 3 || linkedRoute.routeStatus === 'CRITICAL') {
+        priority = 'URGENT';
+      } else if (linkedRoute.netShortfallBuses > 0 || linkedRoute.routeStatus === 'DEFICIT') {
+        priority = 'HIGH';
+      } else if (linkedRoute.additionalBusesRequired > 0) {
+        priority = 'MEDIUM';
+      } else {
+        priority = 'LOW';
+      }
+    }
+
     const severity = classifyCrowdDensity(
       Math.max(station.occupancyPercentage, predictedOccupancy),
       settings.thresholds,
@@ -116,14 +146,29 @@ export function generateBusRecommendations(
       id: `REC-${station.code}`,
       stationId: station.id,
       stationName: station.name,
-      currentPassengers: station.currentPassengers,
-      predictedPassengers,
-      occupancyPercentage: station.occupancyPercentage,
+      routeId: linkedRoute?.routeId,
+      routeName: linkedRoute?.routeName,
+      currentPassengers: linkedRoute ? linkedRoute.currentPassengerDemand : station.currentPassengers,
+      predictedPassengers: linkedRoute
+        ? linkedRoute.predictedPassengerDemand
+        : predictedPassengers,
+      occupancyPercentage: linkedRoute
+        ? linkedRoute.occupancyPercentage
+        : station.occupancyPercentage,
       crowdSeverity: severity,
       recommendedAdditionalBuses: buses,
+      allocatedBuses: linkedRoute?.totalAllocatedBuses,
+      runningBuses: linkedRoute?.runningBuses,
+      availableBuses: linkedRoute?.availableBuses,
+      unavailableBuses: linkedRoute?.outOfServiceTotal,
+      requiredBuses: linkedRoute?.requiredBuses,
+      deployableAvailableBuses: linkedRoute?.deployableAvailableBuses,
+      netShortfallBuses: linkedRoute?.netShortfallBuses,
       priority,
       suggestedDeploymentTime,
-      reason: buildRecommendationReason(station, predictedPassengers, predictedOccupancy),
+      reason: linkedRoute
+        ? buildFleetRecommendationReason(station, linkedRoute)
+        : buildRecommendationReason(station, predictedPassengers, predictedOccupancy),
       status: preservedStatus,
       updatedAt: referenceTime.toISOString(),
     });
@@ -249,6 +294,84 @@ export function evaluateZoneAlerts(
         }
       }
     });
+  });
+
+  const severityWeight: Record<string, number> = {
+    CRITICAL: 0,
+    WARNING: 1,
+    INFO: 2,
+  };
+  const statusWeight: Record<string, number> = {
+    ACTIVE: 0,
+    ACKNOWLEDGED: 1,
+    RESOLVED: 2,
+  };
+
+  return Array.from(alertsMap.values()).sort((a, b) => {
+    if (statusWeight[a.status] !== statusWeight[b.status]) {
+      return statusWeight[a.status] - statusWeight[b.status];
+    }
+    if (severityWeight[a.severity] !== severityWeight[b.severity]) {
+      return severityWeight[a.severity] - severityWeight[b.severity];
+    }
+    return b.timestamp.localeCompare(a.timestamp);
+  });
+}
+
+export function evaluateFleetAlerts(
+  routeAllocations: RouteAllocation[],
+  existingAlerts: TransitAlert[],
+  referenceTime: Date,
+): TransitAlert[] {
+  const alertsMap = new Map<string, TransitAlert>();
+  existingAlerts.forEach((a) => {
+    alertsMap.set(a.id, a);
+  });
+
+  const timestamp = referenceTime.toISOString();
+
+  routeAllocations.forEach((route) => {
+    const alertId = `ALT-FLEET-${route.routeId}`;
+    const existing = alertsMap.get(alertId);
+
+    if (route.netShortfallBuses > 0) {
+      const isCrit = route.netShortfallBuses >= 3 || route.routeStatus === 'CRITICAL';
+      const severity = isCrit ? 'CRITICAL' : 'WARNING';
+      const description = `${route.routeId} (${route.routeName}) requires ${route.requiredBuses} buses with ${route.runningBuses} running (${route.additionalBusesRequired} needed). Only ${route.deployableAvailableBuses} available standby; ${route.netShortfallBuses} additional bus${route.netShortfallBuses > 1 ? 'es' : ''} still required (${route.outOfServiceTotal} maint./OOS excluded).`;
+      const recommendedAction =
+        route.deployableAvailableBuses > 0
+          ? `Stage ${route.deployableAvailableBuses} available standby bus${route.deployableAvailableBuses > 1 ? 'es' : ''} immediately and escalate ${route.netShortfallBuses} external corridor supplement.`
+          : `Zero standby buses available on ${route.routeId}. Request ${route.netShortfallBuses} inter-depot backup bus${route.netShortfallBuses > 1 ? 'es' : ''} immediately.`;
+
+      if (!existing) {
+        alertsMap.set(alertId, {
+          id: alertId,
+          stationId: route.primaryStationId,
+          stationName: route.startingStationName,
+          zoneId: route.routeId,
+          zoneName: route.routeName,
+          category: 'Fleet Shortage',
+          severity,
+          timestamp,
+          description,
+          recommendedAction,
+          status: 'ACTIVE',
+        });
+      } else if (existing.status === 'ACTIVE') {
+        alertsMap.set(alertId, {
+          ...existing,
+          severity,
+          description,
+          recommendedAction,
+        });
+      }
+    } else if (existing && existing.status === 'ACTIVE') {
+      alertsMap.set(alertId, {
+        ...existing,
+        status: 'RESOLVED',
+        description: `${route.routeId} (${route.routeName}) fleet coverage restored (${route.runningBuses} running + ${route.availableBuses} available standby vs ${route.requiredBuses} required).`,
+      });
+    }
   });
 
   const severityWeight: Record<string, number> = {

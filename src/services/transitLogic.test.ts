@@ -9,8 +9,15 @@ import {
 import {
   computeRecommendedBuses,
   determineRecommendationPriority,
+  evaluateFleetAlerts,
   generateBusRecommendations,
 } from './decisionEngine';
+import {
+  computeFleetSummary,
+  computeRouteAllocations,
+  createInitialFleetBuses,
+  evaluateFleetDeploymentGap,
+} from './fleetService';
 import { generateCsvReport } from './reportService';
 import {
   createInitialAlerts,
@@ -132,4 +139,92 @@ test('initial alerts include all required categories', () => {
   assert.ok(categories.has('High Crowd Density'));
   assert.ok(categories.has('Camera Offline'));
   assert.ok(categories.has('Rapid Passenger Increase'));
+});
+
+test('fleet deployment gap calculates required minus running and excludes maintenance buses', () => {
+  // Prompt scenario: 30 allocated, 24 running, 4 available, 2 maintenance, 33 required
+  const gap = evaluateFleetDeploymentGap(24, 4, 33);
+  assert.equal(gap.additionalBusesRequired, 9);
+  assert.equal(gap.deployableAvailableBuses, 4);
+  assert.equal(gap.netShortfallBuses, 5);
+
+  // Surplus running buses
+  const surplus = evaluateFleetDeploymentGap(10, 2, 8);
+  assert.equal(surplus.additionalBusesRequired, 0);
+  assert.equal(surplus.deployableAvailableBuses, 0);
+  assert.equal(surplus.netShortfallBuses, 0);
+});
+
+test('fleet conservation invariant and cross-module decision engine consistency hold', () => {
+  const ref = new Date('2026-11-16T09:00:00.000Z');
+  const { stations, historyByStation } = createInitialStations(DEFAULT_DENSITY_THRESHOLDS, ref);
+  const forecasts = stations.map((s) =>
+    buildStationForecast(s, historyByStation[s.id], DEFAULT_DENSITY_THRESHOLDS, ref),
+  );
+  const buses = createInitialFleetBuses(ref, DEFAULT_SYSTEM_SETTINGS.busCapacityAssumed);
+  const routes = computeRouteAllocations(buses, stations, forecasts, DEFAULT_SYSTEM_SETTINGS);
+  const summary = computeFleetSummary(buses, routes);
+
+  assert.equal(routes.length, 4);
+  assert.deepEqual(
+    routes.map((r) => r.routeName),
+    [
+      'Chennai Central – Guindy',
+      'Guindy – Tambaram',
+      'Chennai Central – T. Nagar',
+      'Tambaram – Guindy',
+    ],
+  );
+
+  // Global invariant: total = running + available + out-of-service (including maintenance)
+  assert.equal(
+    summary.totalAllocatedBuses,
+    summary.runningBuses + summary.availableBuses + summary.outOfServiceTotal,
+  );
+
+  // Per-route invariant
+  routes.forEach((r) => {
+    assert.equal(
+      r.totalAllocatedBuses,
+      r.runningBuses + r.availableBuses + r.outOfServiceTotal,
+    );
+    assert.equal(r.additionalBusesRequired, Math.max(0, r.requiredBuses - r.runningBuses));
+  });
+
+  // Mark one RUNNING bus on RT-02 as OUT OF SERVICE and verify downstream consistency
+  const targetBus = buses.find((b) => b.routeId === 'RT-02' && b.status === 'RUNNING');
+  assert.ok(targetBus);
+  const updatedBuses = buses.map((b) =>
+    b.id === targetBus.id ? { ...b, status: 'OUT OF SERVICE' as const, passengerOccupancy: 0 } : b,
+  );
+  const updatedRoutes = computeRouteAllocations(
+    updatedBuses,
+    stations,
+    forecasts,
+    DEFAULT_SYSTEM_SETTINGS,
+  );
+  const updatedSummary = computeFleetSummary(updatedBuses, updatedRoutes);
+
+  assert.equal(updatedSummary.totalAllocatedBuses, summary.totalAllocatedBuses);
+  assert.equal(updatedSummary.runningBuses, summary.runningBuses - 1);
+  assert.equal(updatedSummary.outOfServiceTotal, summary.outOfServiceTotal + 1);
+
+  const recs = generateBusRecommendations(
+    stations,
+    forecasts,
+    DEFAULT_SYSTEM_SETTINGS,
+    [],
+    ref,
+    updatedRoutes,
+  );
+  const rt02 = updatedRoutes.find((r) => r.routeId === 'RT-02');
+  const guindyRec = recs.find((r) => r.routeId === 'RT-02');
+  assert.ok(rt02 && guindyRec);
+  assert.equal(guindyRec.recommendedAdditionalBuses, rt02.additionalBusesRequired);
+  assert.equal(guindyRec.netShortfallBuses, rt02.netShortfallBuses);
+
+  const fleetAlerts = evaluateFleetAlerts(updatedRoutes, createInitialAlerts(ref), ref);
+  const rt02Alert = fleetAlerts.find((a) => a.id === 'ALT-FLEET-RT-02');
+  assert.ok(rt02Alert);
+  assert.equal(rt02Alert.category, 'Fleet Shortage');
 });
