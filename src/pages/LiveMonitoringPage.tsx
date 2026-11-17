@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { Camera, Pause, Play, RefreshCw } from 'lucide-react';
+import { Camera, Eye, Pause, Play, RefreshCw } from 'lucide-react';
 import { useTransit } from '../context/TransitContext';
+import { useAuth } from '../context/AuthContext';
+import { isPageReadOnly } from '../services/authService';
 import { SimulatedCctvCanvas } from '../components/cctv/SimulatedCctvCanvas';
 import { CameraStatusTag, DensityTag } from '../components/common/StatusIndicator';
 
 export const LiveMonitoringPage: React.FC = () => {
+  const { user } = useAuth();
+  const readOnly = isPageReadOnly(user?.assignedRole, 'live-monitoring');
   const {
     filteredStations,
     allCameras,
@@ -33,6 +37,13 @@ export const LiveMonitoringPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {readOnly && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#3B82F6]/15 border border-[#3B82F6]/35 text-[#60A5FA] text-xs font-medium whitespace-nowrap">
+              <Eye className="w-3.5 h-3.5" />
+              <span>Read-Only Observer View</span>
+            </span>
+          )}
+
           <button
             type="button"
             onClick={() => setLocalFeedPlaying((p) => !p)}
@@ -51,25 +62,29 @@ export const LiveMonitoringPage: React.FC = () => {
             )}
           </button>
 
-          <button
-            type="button"
-            onClick={toggleSimulation}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#201C22] hover:bg-[#262128] border border-[#343039] text-[#F4F1F3] text-xs font-medium transition-colors whitespace-nowrap"
-          >
-            <span>
-              {settings.simulationRunning ? 'Pause Global Telemetry' : 'Resume Global Telemetry'}
-            </span>
-          </button>
+          {!readOnly && (
+            <>
+              <button
+                type="button"
+                onClick={toggleSimulation}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#201C22] hover:bg-[#262128] border border-[#343039] text-[#F4F1F3] text-xs font-medium transition-colors whitespace-nowrap"
+              >
+                <span>
+                  {settings.simulationRunning ? 'Pause Global Telemetry' : 'Resume Global Telemetry'}
+                </span>
+              </button>
 
-          <button
-            type="button"
-            onClick={triggerManualStep}
-            aria-label="Step simulated passenger count"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#201C22] hover:bg-[#262128] border border-[#343039] text-[#F4F1F3] text-xs font-medium transition-colors whitespace-nowrap"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Step Simulation</span>
-          </button>
+              <button
+                type="button"
+                onClick={triggerManualStep}
+                aria-label="Step simulated passenger count"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#201C22] hover:bg-[#262128] border border-[#343039] text-[#F4F1F3] text-xs font-medium transition-colors whitespace-nowrap"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Step Simulation</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -119,15 +134,21 @@ export const LiveMonitoringPage: React.FC = () => {
             </div>
             <div className="p-3 rounded-lg bg-[#262128] border border-[#343039] flex flex-col justify-between">
               <div className="text-[11px] text-[#AAA3AD]">Camera Link Control</div>
-              <button
-                type="button"
-                onClick={() => toggleCameraOnlineStatus(selectedCamera.id)}
-                className="mt-1 text-left text-xs font-medium text-[#D01940] hover:text-[#FB7185] transition-colors"
-              >
-                {selectedCamera.status === 'ONLINE'
-                  ? 'Simulate Camera Offline'
-                  : 'Restore Simulated Feed'}
-              </button>
+              {readOnly ? (
+                <div className="mt-1 text-xs font-medium text-[#77717B]">
+                  Read-Only View
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => toggleCameraOnlineStatus(selectedCamera.id)}
+                  className="mt-1 text-left text-xs font-medium text-[#D01940] hover:text-[#FB7185] transition-colors"
+                >
+                  {selectedCamera.status === 'ONLINE'
+                    ? 'Simulate Camera Offline'
+                    : 'Restore Simulated Feed'}
+                </button>
+              )}
             </div>
           </div>
         </div>

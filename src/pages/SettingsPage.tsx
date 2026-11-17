@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { Play, Pause, RotateCcw, Save } from 'lucide-react';
 import { useTransit } from '../context/TransitContext';
+import { useAuth } from '../context/AuthContext';
+import { canManageUsers } from '../services/authService';
 import { CameraStatusTag, DensityTag } from '../components/common/StatusIndicator';
+import { AdminUserManagement } from '../components/admin/AdminUserManagement';
 
 export const SettingsPage: React.FC = () => {
+  const { user } = useAuth();
   const {
     settings,
     allCameras,
@@ -34,6 +38,8 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {canManageUsers(user?.assignedRole) && <AdminUserManagement />}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Application Information & Integration Readiness */}
         <section className="lg:col-span-5 rounded-xl bg-[#201C22] border border-[#343039] p-5 space-y-4">

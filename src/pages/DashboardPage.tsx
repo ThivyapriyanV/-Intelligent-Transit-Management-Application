@@ -21,6 +21,10 @@ import {
   YAxis,
 } from 'recharts';
 import { useTransit } from '../context/TransitContext';
+import { useAuth } from '../context/AuthContext';
+import { canAccessPage } from '../services/authService';
+import { PAGE_PATH_MAP } from '../types/auth';
+import type { PageId } from '../types/transit';
 import {
   DensityTag,
   getDensityColorHex,
@@ -68,6 +72,17 @@ export const DashboardPage: React.FC = () => {
     setActivePage,
     setSelectedCameraId,
   } = useTransit();
+  const { user, navigate } = useAuth();
+
+  const canLiveMonitor = canAccessPage(user?.assignedRole, 'live-monitoring');
+  const canAlerts = canAccessPage(user?.assignedRole, 'alert-centre');
+  const canBusRecs = canAccessPage(user?.assignedRole, 'bus-recommendations');
+
+  const navigateDashboardLink = (page: PageId) => {
+    if (!canAccessPage(user?.assignedRole, page)) return;
+    setActivePage(page);
+    navigate(PAGE_PATH_MAP[page]);
+  };
 
   const totalPassengers = filteredStations.reduce((sum, s) => sum + s.currentPassengers, 0);
   const prevPassengers = filteredStations.reduce((sum, s) => sum + s.previousPassengers, 0);
@@ -187,17 +202,19 @@ export const DashboardPage: React.FC = () => {
           Simulated network overview · Deterministic crowd telemetry across Chennai transit corridors
         </p>
         <div className="flex items-center gap-2 shrink-0">
+          {canLiveMonitor && (
+            <button
+              type="button"
+              onClick={() => navigateDashboardLink('live-monitoring')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#B51232] hover:bg-[#D01940] text-[#F4F1F3] text-xs font-medium transition-colors crimson-glow-sm whitespace-nowrap"
+            >
+              <span>Open Live Monitoring</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => setActivePage('live-monitoring')}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#B51232] hover:bg-[#D01940] text-[#F4F1F3] text-xs font-medium transition-colors crimson-glow-sm whitespace-nowrap"
-          >
-            <span>Open Live Monitoring</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setActivePage('crowd-analytics')}
+            onClick={() => navigateDashboardLink('crowd-analytics')}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#201C22] hover:bg-[#262128] border border-[#343039] text-[#F4F1F3] text-xs font-medium transition-colors whitespace-nowrap"
           >
             <span>View Analytics</span>
@@ -347,13 +364,15 @@ export const DashboardPage: React.FC = () => {
             <h2 className="text-sm font-medium text-[#F4F1F3] font-display">
               Station Occupancy Overview
             </h2>
-            <button
-              type="button"
-              onClick={() => setActivePage('bus-recommendations')}
-              className="text-xs text-[#D01940] hover:text-[#FB7185] font-medium transition-colors"
-            >
-              Bus Advisories
-            </button>
+            {canBusRecs && (
+              <button
+                type="button"
+                onClick={() => navigateDashboardLink('bus-recommendations')}
+                className="text-xs text-[#D01940] hover:text-[#FB7185] font-medium transition-colors"
+              >
+                Bus Advisories
+              </button>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -394,13 +413,15 @@ export const DashboardPage: React.FC = () => {
         <section className="lg:col-span-4 rounded-xl bg-[#201C22] border border-[#343039] p-5 flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-medium text-[#F4F1F3] font-display">Recent Alerts</h2>
-            <button
-              type="button"
-              onClick={() => setActivePage('alert-centre')}
-              className="text-xs text-[#D01940] hover:text-[#FB7185] font-medium transition-colors"
-            >
-              Manage All
-            </button>
+            {canAlerts && (
+              <button
+                type="button"
+                onClick={() => navigateDashboardLink('alert-centre')}
+                className="text-xs text-[#D01940] hover:text-[#FB7185] font-medium transition-colors"
+              >
+                Manage All
+              </button>
+            )}
           </div>
 
           <div className="divide-y divide-[#343039] flex-1">
@@ -427,13 +448,15 @@ export const DashboardPage: React.FC = () => {
         <section className="lg:col-span-3 rounded-xl bg-[#201C22] border border-[#343039] p-5 flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-medium text-[#F4F1F3] font-display">Top Crowded Zones</h2>
-            <button
-              type="button"
-              onClick={() => setActivePage('live-monitoring')}
-              className="text-xs text-[#D01940] hover:text-[#FB7185] font-medium transition-colors"
-            >
-              View Feeds
-            </button>
+            {canLiveMonitor && (
+              <button
+                type="button"
+                onClick={() => navigateDashboardLink('live-monitoring')}
+                className="text-xs text-[#D01940] hover:text-[#FB7185] font-medium transition-colors"
+              >
+                View Feeds
+              </button>
+            )}
           </div>
 
           <div className="space-y-2.5 flex-1">
@@ -441,11 +464,13 @@ export const DashboardPage: React.FC = () => {
               <button
                 key={zone.id}
                 type="button"
+                disabled={!canLiveMonitor}
                 onClick={() => {
+                  if (!canLiveMonitor) return;
                   setSelectedCameraId(zone.id);
-                  setActivePage('live-monitoring');
+                  navigateDashboardLink('live-monitoring');
                 }}
-                className="w-full text-left p-2.5 rounded-lg bg-[#262128] hover:bg-[#B51232]/15 border border-[#343039] hover:border-[#B51232]/60 transition-colors flex items-center justify-between gap-2"
+                className="w-full text-left p-2.5 rounded-lg bg-[#262128] hover:bg-[#B51232]/15 border border-[#343039] hover:border-[#B51232]/60 transition-colors flex items-center justify-between gap-2 disabled:opacity-90 disabled:cursor-default disabled:hover:bg-[#262128] disabled:hover:border-[#343039]"
               >
                 <div className="min-w-0">
                   <div className="text-xs font-medium text-[#F4F1F3] truncate">

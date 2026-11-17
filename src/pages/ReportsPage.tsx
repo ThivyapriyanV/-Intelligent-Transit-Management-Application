@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Download, Printer } from 'lucide-react';
+import { Download, Eye, Printer } from 'lucide-react';
 import {
   Bar,
   BarChart,
@@ -11,6 +11,8 @@ import {
   YAxis,
 } from 'recharts';
 import { useTransit } from '../context/TransitContext';
+import { useAuth } from '../context/AuthContext';
+import { isPageReadOnly } from '../services/authService';
 import {
   buildDailyReportRecords,
   generateCsvReport,
@@ -18,6 +20,8 @@ import {
 } from '../services/reportService';
 
 export const ReportsPage: React.FC = () => {
+  const { user } = useAuth();
+  const readOnly = isPageReadOnly(user?.assignedRole, 'reports');
   const { stations, alerts, recommendations, currentTime, selectedStationFilter } = useTransit();
   const [dateRangeDays, setDateRangeDays] = useState<1 | 7 | 30>(7);
   const [exportMessage, setExportMessage] = useState<string | null>(null);
@@ -83,7 +87,7 @@ export const ReportsPage: React.FC = () => {
     <div className="space-y-6">
       {/* Toolbar: Date Range + CSV & Print Actions */}
       <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#343039]">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium text-[#AAA3AD]">Report Window:</span>
           <div className="inline-flex items-center p-1 rounded-lg bg-[#201C22] border border-[#343039]">
             {(
@@ -107,6 +111,12 @@ export const ReportsPage: React.FC = () => {
               </button>
             ))}
           </div>
+          {readOnly && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#3B82F6]/15 border border-[#3B82F6]/35 text-[#60A5FA] text-xs font-medium whitespace-nowrap">
+              <Eye className="w-3.5 h-3.5" />
+              <span>Read-Only Observer View</span>
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">

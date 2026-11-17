@@ -17,7 +17,10 @@ import {
   X,
 } from 'lucide-react';
 import { PageId } from '../../types/transit';
+import { PAGE_PATH_MAP, ROLE_LABELS } from '../../types/auth';
 import { useTransit } from '../../context/TransitContext';
+import { useAuth } from '../../context/AuthContext';
+import { canAccessPage } from '../../services/authService';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -40,10 +43,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCloseMobile,
 }) => {
   const { activePage, setActivePage, activeAlertsCount, recommendations } = useTransit();
+  const { user, navigate } = useAuth();
 
   const pendingRecsCount = recommendations.filter((r) => r.status === 'PENDING').length;
 
-  const navItems: NavItem[] = [
+  const allNavItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'live-monitoring', label: 'Live Monitoring', icon: Camera },
     { id: 'crowd-analytics', label: 'Crowd Analytics', icon: BarChart3 },
@@ -69,8 +73,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
+  const navItems = allNavItems.filter((item) =>
+    canAccessPage(user?.assignedRole, item.id),
+  );
+
   const handleNavigate = (page: PageId) => {
     setActivePage(page);
+    navigate(PAGE_PATH_MAP[page]);
     onCloseMobile();
   };
 
@@ -195,15 +204,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           <div className="flex items-center gap-3 px-2 py-1.5">
             <div className="w-8 h-8 rounded-lg bg-[#262128] border border-[#343039] flex items-center justify-center text-[#F4F1F3] shrink-0">
-              <UserCheck className="w-4 h-4 text-[#AAA3AD]" />
+              <UserCheck className="w-4 h-4 text-[#D01940]" />
             </div>
             {!collapsed && (
               <div className="min-w-0">
                 <div className="text-xs font-semibold text-[#F4F1F3] truncate">
-                  Transit Operations
+                  {user?.fullName || 'Transit Operations'}
                 </div>
                 <div className="text-[11px] text-[#77717B] truncate">
-                  Command Duty Officer
+                  {user ? ROLE_LABELS[user.assignedRole] : 'Command Duty Officer'}
                 </div>
               </div>
             )}
